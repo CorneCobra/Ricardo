@@ -27,6 +27,10 @@ jobs:
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # Schakel GitHub Pages automatisch in (bron = GitHub Actions),
+          # zodat er geen handmatige instelling nodig is.
+          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
