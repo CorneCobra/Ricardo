@@ -76,6 +76,21 @@
         </div>
 
         <fieldset class="field">
+          <legend>Heeft de auto velgschade?</legend>
+          <div class="radio-group" role="radiogroup">
+            <label class="pill"><input type="radio" name="velgschade" value="Ja" /> Ja</label>
+            <label class="pill"><input type="radio" name="velgschade" value="Nee" checked /> Nee</label>
+          </div>
+        </fieldset>
+        <div class="field conditional" id="velgschade-detail" hidden>
+          <label for="velgschade-omschrijving">Omschrijving velgschade</label>
+          <textarea id="velgschade-omschrijving" name="velgschade_omschrijving" rows="3" placeholder="Beschrijf de velgschade…"></textarea>
+          <label for="velg-fotos" style="margin-top:0.75rem;">Foto's van de velgschade</label>
+          <input id="velg-fotos" name="velg_fotos" type="file" accept="image/*" multiple />
+          <div id="velg-foto-preview" class="foto-preview" aria-live="polite"></div>
+        </div>
+
+        <fieldset class="field">
           <legend>Moet de auto onderhoud hebben?</legend>
           <div class="radio-group" role="radiogroup">
             <label class="pill"><input type="radio" name="onderhoud" value="Ja" /> Ja</label>
