@@ -73,6 +73,9 @@
         <div class="field conditional" id="schade-detail" hidden>
           <label for="schade-omschrijving">Omschrijving schade</label>
           <textarea id="schade-omschrijving" name="schade_omschrijving" rows="3" placeholder="Beschrijf de schade…"></textarea>
+          <label for="schade-fotos" style="margin-top:0.75rem;">Foto's van de schade</label>
+          <input id="schade-fotos" name="schade_fotos" type="file" accept="image/*" multiple />
+          <div id="schade-foto-preview" class="foto-preview" aria-live="polite"></div>
         </div>
 
         <fieldset class="field">

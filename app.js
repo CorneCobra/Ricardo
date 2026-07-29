@@ -26,6 +26,8 @@ const inspPlateEl = document.getElementById("insp-plate");
 const inspApkEl = document.getElementById("insp-apk");
 const fotoInput = document.getElementById("fotos");
 const fotoPreview = document.getElementById("foto-preview");
+const schadeFotoInput = document.getElementById("schade-fotos");
+const schadeFotoPreview = document.getElementById("schade-foto-preview");
 const velgFotoInput = document.getElementById("velg-fotos");
 const velgFotoPreview = document.getElementById("velg-foto-preview");
 const pdfBtn = document.getElementById("pdf-btn");
@@ -36,6 +38,7 @@ let currentVehicle = null;
 let currentPlate = "";
 let currentFuel = [];
 const photos = []; // algemene foto's: { dataUrl, w, h }
+const schadePhotos = []; // foto's van schade
 const velgPhotos = []; // foto's van velgschade
 
 /** Normaliseer een kenteken: hoofdletters, alleen letters/cijfers. */
@@ -333,6 +336,7 @@ function setupPhotoInput(inputEl, previewEl, store) {
 }
 
 setupPhotoInput(fotoInput, fotoPreview, photos);
+setupPhotoInput(schadeFotoInput, schadeFotoPreview, schadePhotos);
 setupPhotoInput(velgFotoInput, velgFotoPreview, velgPhotos);
 
 /* ---- PDF genereren ---- */
@@ -478,8 +482,9 @@ function buildPdf() {
     y = gridTop + rowsUsed * cellH + (rowsUsed - 1) * gap;
   };
 
-  photoGrid("Foto's", photos);
+  if (a.schade === "Ja") photoGrid("Foto's schade", schadePhotos);
   if (a.velgschade === "Ja") photoGrid("Foto's velgschade", velgPhotos);
+  photoGrid("Foto's", photos);
 
   // Voettekst met disclaimer
   doc.setFontSize(8);
