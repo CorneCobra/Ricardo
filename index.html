@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kenteken check — RDW voertuiggegevens</title>
+  <meta name="description" content="Zoek basisgegevens van een voertuig op kenteken via de open data van de RDW." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>" />
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <h1>Kenteken check</h1>
+      <p class="subtitle">Bekijk de basisgegevens van een voertuig op basis van het kenteken. Gegevens afkomstig van de open data van de RDW.</p>
+    </header>
+
+    <form id="lookup-form" class="lookup" autocomplete="off" novalidate>
+      <label class="visually-hidden" for="plate">Kenteken</label>
+      <div class="plate-field">
+        <span class="plate-flag" aria-hidden="true">
+          <span class="plate-flag__stars">★</span>
+          <span class="plate-flag__country">NL</span>
+        </span>
+        <input
+          id="plate"
+          name="plate"
+          type="text"
+          inputmode="latin"
+          maxlength="8"
+          placeholder="XX-999-X"
+          aria-describedby="plate-help"
+          spellcheck="false"
+        />
+      </div>
+      <button type="submit" id="submit-btn">Zoek</button>
+    </form>
+    <p id="plate-help" class="help">Voer een Nederlands kenteken in, met of zonder streepjes.</p>
+
+    <section id="status" class="status" aria-live="polite"></section>
+
+    <section id="result" class="result" hidden>
+      <div class="result__head">
+        <h2 id="result-title"></h2>
+        <span id="result-plate" class="result__plate"></span>
+      </div>
+      <dl id="result-grid" class="grid"></dl>
+      <p class="source">Bron: <a id="source-link" href="https://opendata.rdw.nl/" target="_blank" rel="noopener noreferrer">RDW open data</a>. Aan deze gegevens kunnen geen rechten worden ontleend.</p>
+    </section>
+
+    <section id="inspection" class="inspection" hidden>
+      <h2>Keuring / inname</h2>
+      <p class="inspection__intro">Vul de onderstaande punten in. Bij <strong>Download PDF</strong> maak je een rapport met de voertuiggegevens én de ingevulde controle.</p>
+
+      <form id="inspection-form" novalidate>
+        <div class="field field--readonly">
+          <label for="insp-plate">Kenteken</label>
+          <input id="insp-plate" name="plate" type="text" readonly />
+        </div>
+
+        <div class="field field--readonly">
+          <label for="insp-apk">APK nodig? <span class="field__auto">(automatisch bepaald)</span></label>
+          <input id="insp-apk" name="apk" type="text" readonly />
+        </div>
+
+        <fieldset class="field">
+          <legend>Heeft de auto schade?</legend>
+          <div class="radio-group" role="radiogroup">
+            <label class="pill"><input type="radio" name="schade" value="Ja" /> Ja</label>
+            <label class="pill"><input type="radio" name="schade" value="Nee" checked /> Nee</label>
+          </div>
+        </fieldset>
+        <div class="field conditional" id="schade-detail" hidden>
+          <label for="schade-omschrijving">Omschrijving schade</label>
+          <textarea id="schade-omschrijving" name="schade_omschrijving" rows="3" placeholder="Beschrijf de schade…"></textarea>
+        </div>
+
+        <fieldset class="field">
+          <legend>Moet de auto onderhoud hebben?</legend>
+          <div class="radio-group" role="radiogroup">
+            <label class="pill"><input type="radio" name="onderhoud" value="Ja" /> Ja</label>
+            <label class="pill"><input type="radio" name="onderhoud" value="Nee" checked /> Nee</label>
+          </div>
+        </fieldset>
+        <div class="field conditional" id="onderhoud-detail" hidden>
+          <label for="onderhoud-omschrijving">Welk onderhoud is nodig?</label>
+          <textarea id="onderhoud-omschrijving" name="onderhoud_omschrijving" rows="3" placeholder="Beschrijf het benodigde onderhoud…"></textarea>
+        </div>
+
+        <div class="field field--inline">
+          <div>
+            <label for="laatste-onderhoud">Wanneer had de auto voor het laatst onderhoud?</label>
+            <input id="laatste-onderhoud" name="laatste_onderhoud" type="date" />
+          </div>
+          <div>
+            <label for="km-onderhoud">Kilometerstand bij laatste onderhoud</label>
+            <input id="km-onderhoud" name="km_onderhoud" type="number" min="0" step="1000" inputmode="numeric" placeholder="bijv. 45.000" />
+          </div>
+        </div>
+
+        <fieldset class="field">
+          <legend>Zit de laadkabel in de auto?</legend>
+          <div class="radio-group" role="radiogroup">
+            <label class="pill"><input type="radio" name="laadkabel" value="Ja" /> Ja</label>
+            <label class="pill"><input type="radio" name="laadkabel" value="Nee" /> Nee</label>
+            <label class="pill"><input type="radio" name="laadkabel" value="N.v.t." checked /> N.v.t.</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Zit de slotbout in de auto?</legend>
+          <div class="radio-group" role="radiogroup">
+            <label class="pill"><input type="radio" name="slotbout" value="Ja" /> Ja</label>
+            <label class="pill"><input type="radio" name="slotbout" value="Nee" checked /> Nee</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field">
+          <legend>Werkt de airco?</legend>
+          <div class="radio-group" role="radiogroup">
+            <label class="pill"><input type="radio" name="airco" value="Ja" checked /> Ja</label>
+            <label class="pill"><input type="radio" name="airco" value="Nee" /> Nee</label>
+            <label class="pill"><input type="radio" name="airco" value="N.v.t." /> N.v.t.</label>
+          </div>
+        </fieldset>
+
+        <div class="field field--inline">
+          <div>
+            <label for="profiel-voor">Profiel voorbanden (mm)</label>
+            <input id="profiel-voor" name="profiel_voor" type="number" min="0" max="20" step="0.1" inputmode="decimal" placeholder="bijv. 6.5" />
+          </div>
+          <div>
+            <label for="profiel-achter">Profiel achterbanden (mm)</label>
+            <input id="profiel-achter" name="profiel_achter" type="number" min="0" max="20" step="0.1" inputmode="decimal" placeholder="bijv. 5.0" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="fotos">Foto's toevoegen</label>
+          <input id="fotos" name="fotos" type="file" accept="image/*" multiple />
+          <p class="help help--left">Kies foto's uit je galerij of maak een foto. Ze worden aan het PDF-rapport toegevoegd en niet geüpload.</p>
+          <div id="foto-preview" class="foto-preview" aria-live="polite"></div>
+        </div>
+
+        <div class="inspection__actions">
+          <button type="submit" id="pdf-btn">Download PDF</button>
+          <span id="pdf-status" class="pdf-status" aria-live="polite"></span>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Deze site gebruikt de openbare API van de RDW en slaat geen gegevens op.</p>
+  </footer>
+
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
