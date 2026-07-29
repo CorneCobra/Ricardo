@@ -20,9 +20,9 @@ en waarmee je een keuring/inname kunt vastleggen en als **PDF** kunt downloaden.
 
 Na een geslaagde zoekopdracht verschijnt een keuringsformulier met o.a.:
 
-- Schade (ja/nee, met omschrijving), velgschade (ja/nee, met omschrijving én
-  eigen foto's), onderhoud (ja/nee, met omschrijving), datum en kilometerstand
-  laatste onderhoud;
+- Schade en velgschade (elk ja/nee, met omschrijving én eigen foto's),
+  onderhoud (ja/nee, met omschrijving), datum en kilometerstand laatste
+  onderhoud;
 - Laadkabel, slotbout, werking airco;
 - Bandenprofiel voor en achter (mm);
 - **APK nodig?** — automatisch bepaald uit de RDW-vervaldatum;
