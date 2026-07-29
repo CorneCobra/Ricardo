@@ -449,58 +449,15 @@ function buildPdf() {
     row(label, value);
   }
 
-  // Foto's die direct onder de betreffende vraag meelopen (2 kolommen,
-  // ~6 per volle pagina). Breekt naar een nieuwe pagina waar nodig.
-  const inlinePhotos = (caption, list) => {
-    if (!list.length) return;
-    const cols = 2;
-    const gap = 6;
-    const cellW = (contentW - gap) / cols;
-    const cellH = 72;
-    ensureSpace(7);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(90);
-    doc.text(`${caption} (${list.length}):`, margin, y);
-    doc.setTextColor(0);
-    y += 4;
-    for (let i = 0; i < list.length; i++) {
-      const col = i % cols;
-      if (col === 0) ensureSpace(cellH + 2); // past er een nieuwe rij?
-      const rowTop = y;
-      const photo = list[i];
-      const cx = margin + col * (cellW + gap);
-      let w = cellW;
-      let h = (photo.h / photo.w) * w;
-      if (h > cellH) {
-        h = cellH;
-        w = (photo.w / photo.h) * h;
-      }
-      doc.addImage(photo.dataUrl, "JPEG", cx + (cellW - w) / 2, rowTop + (cellH - h) / 2, w, h);
-      if (col === cols - 1) y = rowTop + cellH + gap;
-    }
-    if (list.length % cols !== 0) y += cellH + gap;
-    y += 2;
-  };
-
   // Keuring / inspectie
   y += 3;
   heading("Keuring / inname");
   const a = collectAnswers();
   row("APK nodig?", inspApkEl.value);
-
   row("Schade?", a.schade);
-  if (a.schade === "Ja") {
-    row("Omschrijving schade", a.schade_omschrijving || "—");
-    inlinePhotos("Foto's schade", schadePhotos);
-  }
-
+  if (a.schade === "Ja") row("Omschrijving schade", a.schade_omschrijving || "—");
   row("Velgschade?", a.velgschade);
-  if (a.velgschade === "Ja") {
-    row("Omschrijving velgschade", a.velgschade_omschrijving || "—");
-    inlinePhotos("Foto's velgschade", velgPhotos);
-  }
-
+  if (a.velgschade === "Ja") row("Omschrijving velgschade", a.velgschade_omschrijving || "—");
   row("Onderhoud nodig?", a.onderhoud);
   if (a.onderhoud === "Ja") row("Welk onderhoud", a.onderhoud_omschrijving || "—");
   row("Laatste onderhoud", a.laatste_onderhoud ? formatDate(a.laatste_onderhoud.replace(/-/g, "")) : "—");
@@ -511,12 +468,51 @@ function buildPdf() {
   row("Profiel voorbanden", a.profiel_voor ? `${a.profiel_voor} mm` : "—");
   row("Profiel achterbanden", a.profiel_achter ? `${a.profiel_achter} mm` : "—");
 
-  // Overige (algemene) foto's onderaan.
-  if (photos.length) {
-    y += 3;
-    heading(`Overige foto's (${photos.length})`);
-    inlinePhotos("Foto's", photos);
-  }
+  // Foto's — gegroepeerd onderaan, 6 per pagina (2 kolommen × 3 rijen).
+  const photoGrid = (title, list) => {
+    if (!list.length) return;
+    const cols = 2;
+    const rows = 3;
+    const gap = 6;
+    const cellW = (contentW - gap * (cols - 1)) / cols;
+    // Elke fotosectie start op een nieuwe pagina zodat 6 foto's op vol
+    // formaat passen.
+    doc.addPage();
+    y = margin;
+    heading(`${title} (${list.length})`);
+    let gridTop = y;
+    const perPage = cols * rows;
+    const cellHFor = (top) => (pageH - margin - top - gap * (rows - 1)) / rows;
+    let cellH = cellHFor(gridTop);
+
+    list.forEach((photo, i) => {
+      const cell = i % perPage;
+      if (i > 0 && cell === 0) {
+        doc.addPage();
+        gridTop = margin;
+        cellH = cellHFor(gridTop);
+      }
+      const col = cell % cols;
+      const rowIdx = Math.floor(cell / cols);
+      const cx = margin + col * (cellW + gap);
+      const cy = gridTop + rowIdx * (cellH + gap);
+      let w = cellW;
+      let h = (photo.h / photo.w) * w;
+      if (h > cellH) {
+        h = cellH;
+        w = (photo.w / photo.h) * h;
+      }
+      doc.addImage(photo.dataUrl, "JPEG", cx + (cellW - w) / 2, cy + (cellH - h) / 2, w, h);
+    });
+
+    const onLastPage = ((list.length - 1) % perPage) + 1;
+    const rowsUsed = Math.ceil(onLastPage / cols);
+    y = gridTop + rowsUsed * cellH + (rowsUsed - 1) * gap;
+  };
+
+  if (a.schade === "Ja") photoGrid("Foto's schade", schadePhotos);
+  if (a.velgschade === "Ja") photoGrid("Foto's velgschade", velgPhotos);
+  photoGrid("Foto's", photos);
 
   // Voettekst met disclaimer
   doc.setFontSize(8);
