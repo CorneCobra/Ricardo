@@ -37,6 +37,24 @@ const pdfStatus = document.getElementById("pdf-status");
 let currentVehicle = null;
 let currentPlate = "";
 let currentFuel = [];
+// Logo voorladen als (genormaliseerde) data-URL voor gebruik in de PDF.
+let logoImage = null; // { url, w, h }
+(function preloadLogo() {
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d").drawImage(img, 0, 0);
+      logoImage = { url: canvas.toDataURL("image/png"), w: img.naturalWidth, h: img.naturalHeight };
+    } catch {
+      /* logo optioneel; negeer fouten */
+    }
+  };
+  img.src = "assets/logo.png";
+})();
+
 const photos = []; // algemene foto's: { dataUrl, w, h }
 const schadePhotos = []; // foto's van schade
 const velgPhotos = []; // foto's van velgschade
@@ -400,19 +418,30 @@ function buildPdf() {
     y += Math.max(6, lines.length * 5);
   };
 
+  // Logo rechtsboven (indien geladen).
+  if (logoImage) {
+    const logoW = 22;
+    const logoH = (logoImage.h / logoImage.w) * logoW;
+    doc.addImage(logoImage.url, "PNG", pageW - margin - logoW, margin, logoW, logoH);
+  }
+
   // Titel
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("Keuringsrapport voertuig", margin, y);
-  y += 8;
+  doc.text("Keuringsrapport voertuig", margin, y + 6);
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(90);
+  doc.text("Heger & Veldwijk Automotive", margin, y + 12);
+  y += 16;
   doc.setFontSize(10);
   doc.setTextColor(100);
   const now = new Date();
   const stamp = now.toLocaleString("nl-NL", { dateStyle: "long", timeStyle: "short" });
   doc.text(`Kenteken: ${formatDutchPlate(currentPlate)}   •   Opgesteld: ${stamp}`, margin, y);
   doc.setTextColor(0);
-  y += 8;
+  // Zorg dat de inhoud onder het logo begint.
+  y = Math.max(y, margin + 22) + 6;
 
   // Voertuiggegevens (RDW)
   heading("Voertuiggegevens (RDW)");
@@ -420,15 +449,58 @@ function buildPdf() {
     row(label, value);
   }
 
+  // Foto's die direct onder de betreffende vraag meelopen (2 kolommen,
+  // ~6 per volle pagina). Breekt naar een nieuwe pagina waar nodig.
+  const inlinePhotos = (caption, list) => {
+    if (!list.length) return;
+    const cols = 2;
+    const gap = 6;
+    const cellW = (contentW - gap) / cols;
+    const cellH = 72;
+    ensureSpace(7);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(90);
+    doc.text(`${caption} (${list.length}):`, margin, y);
+    doc.setTextColor(0);
+    y += 4;
+    for (let i = 0; i < list.length; i++) {
+      const col = i % cols;
+      if (col === 0) ensureSpace(cellH + 2); // past er een nieuwe rij?
+      const rowTop = y;
+      const photo = list[i];
+      const cx = margin + col * (cellW + gap);
+      let w = cellW;
+      let h = (photo.h / photo.w) * w;
+      if (h > cellH) {
+        h = cellH;
+        w = (photo.w / photo.h) * h;
+      }
+      doc.addImage(photo.dataUrl, "JPEG", cx + (cellW - w) / 2, rowTop + (cellH - h) / 2, w, h);
+      if (col === cols - 1) y = rowTop + cellH + gap;
+    }
+    if (list.length % cols !== 0) y += cellH + gap;
+    y += 2;
+  };
+
   // Keuring / inspectie
   y += 3;
   heading("Keuring / inname");
   const a = collectAnswers();
   row("APK nodig?", inspApkEl.value);
+
   row("Schade?", a.schade);
-  if (a.schade === "Ja") row("Omschrijving schade", a.schade_omschrijving || "—");
+  if (a.schade === "Ja") {
+    row("Omschrijving schade", a.schade_omschrijving || "—");
+    inlinePhotos("Foto's schade", schadePhotos);
+  }
+
   row("Velgschade?", a.velgschade);
-  if (a.velgschade === "Ja") row("Omschrijving velgschade", a.velgschade_omschrijving || "—");
+  if (a.velgschade === "Ja") {
+    row("Omschrijving velgschade", a.velgschade_omschrijving || "—");
+    inlinePhotos("Foto's velgschade", velgPhotos);
+  }
+
   row("Onderhoud nodig?", a.onderhoud);
   if (a.onderhoud === "Ja") row("Welk onderhoud", a.onderhoud_omschrijving || "—");
   row("Laatste onderhoud", a.laatste_onderhoud ? formatDate(a.laatste_onderhoud.replace(/-/g, "")) : "—");
@@ -439,52 +511,12 @@ function buildPdf() {
   row("Profiel voorbanden", a.profiel_voor ? `${a.profiel_voor} mm` : "—");
   row("Profiel achterbanden", a.profiel_achter ? `${a.profiel_achter} mm` : "—");
 
-  // Foto's — 6 per pagina (2 kolommen × 3 rijen).
-  const photoGrid = (title, list) => {
-    if (!list.length) return;
-    const cols = 2;
-    const rows = 3;
-    const gap = 6;
-    const cellW = (contentW - gap * (cols - 1)) / cols;
-    // Start elke fotosectie op een nieuwe pagina, zodat 6 foto's op vol
-    // formaat passen (2 kolommen × 3 rijen).
-    doc.addPage();
-    y = margin;
-    heading(`${title} (${list.length})`);
-    let gridTop = y;
-    const perPage = cols * rows;
-    const cellHFor = (top) => (pageH - margin - top - gap * (rows - 1)) / rows;
-    let cellH = cellHFor(gridTop);
-
-    list.forEach((photo, i) => {
-      const cell = i % perPage;
-      if (i > 0 && cell === 0) {
-        doc.addPage();
-        gridTop = margin;
-        cellH = cellHFor(gridTop);
-      }
-      const col = cell % cols;
-      const rowIdx = Math.floor(cell / cols);
-      const cx = margin + col * (cellW + gap);
-      const cy = gridTop + rowIdx * (cellH + gap);
-      let w = cellW;
-      let h = (photo.h / photo.w) * w;
-      if (h > cellH) {
-        h = cellH;
-        w = (photo.w / photo.h) * h;
-      }
-      doc.addImage(photo.dataUrl, "JPEG", cx + (cellW - w) / 2, cy + (cellH - h) / 2, w, h);
-    });
-
-    // Zet y onder de laatst gebruikte rij.
-    const onLastPage = ((list.length - 1) % perPage) + 1;
-    const rowsUsed = Math.ceil(onLastPage / cols);
-    y = gridTop + rowsUsed * cellH + (rowsUsed - 1) * gap;
-  };
-
-  if (a.schade === "Ja") photoGrid("Foto's schade", schadePhotos);
-  if (a.velgschade === "Ja") photoGrid("Foto's velgschade", velgPhotos);
-  photoGrid("Foto's", photos);
+  // Overige (algemene) foto's onderaan.
+  if (photos.length) {
+    y += 3;
+    heading(`Overige foto's (${photos.length})`);
+    inlinePhotos("Foto's", photos);
+  }
 
   // Voettekst met disclaimer
   doc.setFontSize(8);
