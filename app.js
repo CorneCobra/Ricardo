@@ -26,6 +26,8 @@ const inspPlateEl = document.getElementById("insp-plate");
 const inspApkEl = document.getElementById("insp-apk");
 const fotoInput = document.getElementById("fotos");
 const fotoPreview = document.getElementById("foto-preview");
+const velgFotoInput = document.getElementById("velg-fotos");
+const velgFotoPreview = document.getElementById("velg-foto-preview");
 const pdfBtn = document.getElementById("pdf-btn");
 const pdfStatus = document.getElementById("pdf-status");
 
@@ -33,7 +35,8 @@ const pdfStatus = document.getElementById("pdf-status");
 let currentVehicle = null;
 let currentPlate = "";
 let currentFuel = [];
-const photos = []; // { dataUrl, w, h }
+const photos = []; // algemene foto's: { dataUrl, w, h }
+const velgPhotos = []; // foto's van velgschade
 
 /** Normaliseer een kenteken: hoofdletters, alleen letters/cijfers. */
 function normalizePlate(value) {
@@ -261,6 +264,7 @@ function toggleConditional(name, detailId) {
   update();
 }
 toggleConditional("schade", "schade-detail");
+toggleConditional("velgschade", "velgschade-detail");
 toggleConditional("onderhoud", "onderhoud-detail");
 
 /* ---- Foto's: inlezen, verkleinen, preview ---- */
@@ -292,40 +296,44 @@ function readAndScale(file) {
   });
 }
 
-function renderPhotoPreview() {
-  fotoPreview.innerHTML = "";
-  photos.forEach((photo, index) => {
-    const thumb = document.createElement("div");
-    thumb.className = "foto-thumb";
-    const img = document.createElement("img");
-    img.src = photo.dataUrl;
-    img.alt = `Foto ${index + 1}`;
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.setAttribute("aria-label", `Verwijder foto ${index + 1}`);
-    remove.textContent = "×";
-    remove.addEventListener("click", () => {
-      photos.splice(index, 1);
-      renderPhotoPreview();
+/* Koppel een bestand-invoer aan een fotolijst + preview (herbruikbaar). */
+function setupPhotoInput(inputEl, previewEl, store) {
+  const render = () => {
+    previewEl.innerHTML = "";
+    store.forEach((photo, index) => {
+      const thumb = document.createElement("div");
+      thumb.className = "foto-thumb";
+      const img = document.createElement("img");
+      img.src = photo.dataUrl;
+      img.alt = `Foto ${index + 1}`;
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.setAttribute("aria-label", `Verwijder foto ${index + 1}`);
+      remove.textContent = "×";
+      remove.addEventListener("click", () => {
+        store.splice(index, 1);
+        render();
+      });
+      thumb.append(img, remove);
+      previewEl.appendChild(thumb);
     });
-    thumb.append(img, remove);
-    fotoPreview.appendChild(thumb);
+  };
+  inputEl.addEventListener("change", async () => {
+    for (const file of Array.from(inputEl.files || [])) {
+      if (!file.type.startsWith("image/")) continue;
+      try {
+        store.push(await readAndScale(file));
+      } catch {
+        /* sla onleesbare bestanden over */
+      }
+    }
+    inputEl.value = ""; // sta toe dezelfde foto opnieuw te kiezen
+    render();
   });
 }
 
-fotoInput.addEventListener("change", async () => {
-  const files = Array.from(fotoInput.files || []);
-  for (const file of files) {
-    if (!file.type.startsWith("image/")) continue;
-    try {
-      photos.push(await readAndScale(file));
-    } catch {
-      /* sla onleesbare bestanden over */
-    }
-  }
-  fotoInput.value = ""; // sta toe dezelfde foto opnieuw te kiezen
-  renderPhotoPreview();
-});
+setupPhotoInput(fotoInput, fotoPreview, photos);
+setupPhotoInput(velgFotoInput, velgFotoPreview, velgPhotos);
 
 /* ---- PDF genereren ---- */
 function collectAnswers() {
@@ -336,6 +344,8 @@ function collectAnswers() {
   return {
     schade: val("schade"),
     schade_omschrijving: val("schade_omschrijving"),
+    velgschade: val("velgschade"),
+    velgschade_omschrijving: val("velgschade_omschrijving"),
     onderhoud: val("onderhoud"),
     onderhoud_omschrijving: val("onderhoud_omschrijving"),
     laatste_onderhoud: val("laatste_onderhoud"),
@@ -413,6 +423,8 @@ function buildPdf() {
   row("APK nodig?", inspApkEl.value);
   row("Schade?", a.schade);
   if (a.schade === "Ja") row("Omschrijving schade", a.schade_omschrijving || "—");
+  row("Velgschade?", a.velgschade);
+  if (a.velgschade === "Ja") row("Omschrijving velgschade", a.velgschade_omschrijving || "—");
   row("Onderhoud nodig?", a.onderhoud);
   if (a.onderhoud === "Ja") row("Welk onderhoud", a.onderhoud_omschrijving || "—");
   row("Laatste onderhoud", a.laatste_onderhoud ? formatDate(a.laatste_onderhoud.replace(/-/g, "")) : "—");
@@ -423,24 +435,51 @@ function buildPdf() {
   row("Profiel voorbanden", a.profiel_voor ? `${a.profiel_voor} mm` : "—");
   row("Profiel achterbanden", a.profiel_achter ? `${a.profiel_achter} mm` : "—");
 
-  // Foto's
-  if (photos.length) {
-    y += 3;
-    heading(`Foto's (${photos.length})`);
-    for (const photo of photos) {
-      const maxW = contentW;
-      const maxH = pageH - margin * 2 - 6;
-      let w = maxW;
+  // Foto's — 6 per pagina (2 kolommen × 3 rijen).
+  const photoGrid = (title, list) => {
+    if (!list.length) return;
+    const cols = 2;
+    const rows = 3;
+    const gap = 6;
+    const cellW = (contentW - gap * (cols - 1)) / cols;
+    // Start elke fotosectie op een nieuwe pagina, zodat 6 foto's op vol
+    // formaat passen (2 kolommen × 3 rijen).
+    doc.addPage();
+    y = margin;
+    heading(`${title} (${list.length})`);
+    let gridTop = y;
+    const perPage = cols * rows;
+    const cellHFor = (top) => (pageH - margin - top - gap * (rows - 1)) / rows;
+    let cellH = cellHFor(gridTop);
+
+    list.forEach((photo, i) => {
+      const cell = i % perPage;
+      if (i > 0 && cell === 0) {
+        doc.addPage();
+        gridTop = margin;
+        cellH = cellHFor(gridTop);
+      }
+      const col = cell % cols;
+      const rowIdx = Math.floor(cell / cols);
+      const cx = margin + col * (cellW + gap);
+      const cy = gridTop + rowIdx * (cellH + gap);
+      let w = cellW;
       let h = (photo.h / photo.w) * w;
-      if (h > maxH) {
-        h = maxH;
+      if (h > cellH) {
+        h = cellH;
         w = (photo.w / photo.h) * h;
       }
-      ensureSpace(h + 4);
-      doc.addImage(photo.dataUrl, "JPEG", margin, y, w, h);
-      y += h + 4;
-    }
-  }
+      doc.addImage(photo.dataUrl, "JPEG", cx + (cellW - w) / 2, cy + (cellH - h) / 2, w, h);
+    });
+
+    // Zet y onder de laatst gebruikte rij.
+    const onLastPage = ((list.length - 1) % perPage) + 1;
+    const rowsUsed = Math.ceil(onLastPage / cols);
+    y = gridTop + rowsUsed * cellH + (rowsUsed - 1) * gap;
+  };
+
+  photoGrid("Foto's", photos);
+  if (a.velgschade === "Ja") photoGrid("Foto's velgschade", velgPhotos);
 
   // Voettekst met disclaimer
   doc.setFontSize(8);

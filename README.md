@@ -20,15 +20,16 @@ en waarmee je een keuring/inname kunt vastleggen en als **PDF** kunt downloaden.
 
 Na een geslaagde zoekopdracht verschijnt een keuringsformulier met o.a.:
 
-- Schade (ja/nee, met omschrijving), onderhoud (ja/nee, met omschrijving),
-  datum laatste onderhoud;
+- Schade (ja/nee, met omschrijving), velgschade (ja/nee, met omschrijving én
+  eigen foto's), onderhoud (ja/nee, met omschrijving), datum en kilometerstand
+  laatste onderhoud;
 - Laadkabel, slotbout, werking airco;
 - Bandenprofiel voor en achter (mm);
 - **APK nodig?** — automatisch bepaald uit de RDW-vervaldatum;
 - **Foto's toevoegen** — uit galerij of camera; deze worden in de PDF opgenomen.
 
 Met **Download PDF** wordt een rapport (`keuring-<kenteken>.pdf`) gegenereerd met
-de RDW-gegevens, de ingevulde controle én de foto's. De PDF wordt volledig in de
+de RDW-gegevens, de ingevulde controle én de foto's (6 per pagina). De PDF wordt volledig in de
 browser gemaakt met [jsPDF](https://github.com/parallax/jsPDF) (lokaal
 meegeleverd in `vendor/jspdf.umd.min.js`, geen CDN). Foto's worden **niet
 geüpload** — alles blijft in de browser.
