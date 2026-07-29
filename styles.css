@@ -262,8 +262,10 @@ body {
   font-weight: 600;
 }
 
-.field--inline { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.field--inline label { display: block; font-weight: 600; margin-bottom: 0.4rem; }
+.field--inline { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end; }
+.field--inline > div { display: flex; flex-direction: column; }
+.field--inline label { font-weight: 600; margin-bottom: 0.4rem; }
+.field--inline input { margin-top: auto; }
 
 @media (max-width: 480px) {
   .field--inline { grid-template-columns: 1fr; }

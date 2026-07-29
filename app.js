@@ -339,6 +339,7 @@ function collectAnswers() {
     onderhoud: val("onderhoud"),
     onderhoud_omschrijving: val("onderhoud_omschrijving"),
     laatste_onderhoud: val("laatste_onderhoud"),
+    km_onderhoud: val("km_onderhoud"),
     laadkabel: val("laadkabel"),
     slotbout: val("slotbout"),
     airco: val("airco"),
@@ -415,6 +416,7 @@ function buildPdf() {
   row("Onderhoud nodig?", a.onderhoud);
   if (a.onderhoud === "Ja") row("Welk onderhoud", a.onderhoud_omschrijving || "—");
   row("Laatste onderhoud", a.laatste_onderhoud ? formatDate(a.laatste_onderhoud.replace(/-/g, "")) : "—");
+  row("Kilometerstand laatste onderhoud", a.km_onderhoud ? `${formatNumber(a.km_onderhoud)} km` : "—");
   row("Laadkabel aanwezig?", a.laadkabel);
   row("Slotbout aanwezig?", a.slotbout);
   row("Airco werkt?", a.airco);

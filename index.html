@@ -87,9 +87,15 @@
           <textarea id="onderhoud-omschrijving" name="onderhoud_omschrijving" rows="3" placeholder="Beschrijf het benodigde onderhoud…"></textarea>
         </div>
 
-        <div class="field">
-          <label for="laatste-onderhoud">Wanneer had de auto voor het laatst onderhoud?</label>
-          <input id="laatste-onderhoud" name="laatste_onderhoud" type="date" />
+        <div class="field field--inline">
+          <div>
+            <label for="laatste-onderhoud">Wanneer had de auto voor het laatst onderhoud?</label>
+            <input id="laatste-onderhoud" name="laatste_onderhoud" type="date" />
+          </div>
+          <div>
+            <label for="km-onderhoud">Kilometerstand bij laatste onderhoud</label>
+            <input id="km-onderhoud" name="km_onderhoud" type="number" min="0" step="1000" inputmode="numeric" placeholder="bijv. 45.000" />
+          </div>
         </div>
 
         <fieldset class="field">
