@@ -109,6 +109,7 @@ export function voegAfspraakToe(velden) {
     duurMin: 60,
     locatie: "",
     behandeling: "",
+    notitie: "",
     omzet: null,
     verplaatstVan: null,
     ...velden,
@@ -145,19 +146,53 @@ export function verwijderAfspraak(id) {
 }
 
 /**
- * Omzet van een afspraak vastleggen of corrigeren.
- * methode is alleen gevuld wanneer er ook echt betaald is.
+ * Omzet van een afspraak vastleggen of corrigeren. bedragCent is de
+ * behandeling zelf; producten zijn losse verkopen ({ omschrijving,
+ * bedragCent }) die bij dezelfde afspraak horen. methode is alleen gevuld
+ * wanneer er ook echt betaald is.
  */
-export function zetOmzet(afspraakId, { bedragCent, betaald, methode }) {
+export function zetOmzet(afspraakId, { bedragCent, producten = [], betaald, methode }) {
   const afspraak = getAfspraak(afspraakId);
   if (!afspraak) return null;
   afspraak.omzet = {
-    bedragCent,
+    bedragCent: Number(bedragCent) || 0,
+    producten: producten.map((p) => ({
+      id: p.id || nieuwId(),
+      omschrijving: p.omschrijving,
+      bedragCent: Number(p.bedragCent) || 0,
+    })),
     betaald: Boolean(betaald),
     methode: betaald ? methode : null,
   };
   melden();
   return afspraak;
+}
+
+/** Wat de verkochte producten bij een afspraak samen opbrengen. */
+export function productenTotaal(omzet) {
+  return (omzet?.producten || []).reduce((som, p) => som + (p.bedragCent || 0), 0);
+}
+
+/** Behandeling plus verkochte producten. */
+export function omzetTotaal(omzet) {
+  if (!omzet) return 0;
+  return (omzet.bedragCent || 0) + productenTotaal(omzet);
+}
+
+/**
+ * De laatste notities van deze klant vóór een bepaalde afspraak — zodat je
+ * bij het knippen ziet wat je de vorige keren hebt opgeschreven.
+ */
+export function vorigeNotities(klantId, voorStart, aantal = 3) {
+  return getAfspraken()
+    .filter(
+      (a) =>
+        a.klantId === klantId &&
+        a.start < voorStart &&
+        (a.notitie || "").trim() !== "",
+    )
+    .reverse()
+    .slice(0, aantal);
 }
 
 /* ------------------------------------------------------- agenda en ruimte */
@@ -259,6 +294,7 @@ export function maandTotalen(maand) {
   let cashCent = 0;
   let bankCent = 0;
   let openCent = 0;
+  let productenCent = 0;
   let aantalAfspraken = 0;
 
   getAfspraken()
@@ -266,10 +302,12 @@ export function maandTotalen(maand) {
     .forEach((a) => {
       aantalAfspraken += 1;
       if (!a.omzet) return;
-      omzetCent += a.omzet.bedragCent;
-      if (!a.omzet.betaald) openCent += a.omzet.bedragCent;
-      else if (a.omzet.methode === "cash") cashCent += a.omzet.bedragCent;
-      else bankCent += a.omzet.bedragCent;
+      const totaal = omzetTotaal(a.omzet);
+      productenCent += productenTotaal(a.omzet);
+      omzetCent += totaal;
+      if (!a.omzet.betaald) openCent += totaal;
+      else if (a.omzet.methode === "cash") cashCent += totaal;
+      else bankCent += totaal;
     });
 
   const kostenCent = getKosten({ maand }).reduce((som, k) => som + k.bedragCent, 0);
@@ -285,6 +323,7 @@ export function maandTotalen(maand) {
     maand,
     aantalAfspraken,
     omzetCent,
+    productenCent,
     cashCent,
     bankCent,
     openCent,
@@ -312,6 +351,7 @@ export function dagTotalen(datum) {
   let cashCent = 0;
   let bankCent = 0;
   let openCent = 0;
+  let productenCent = 0;
   let zonderOmzet = 0;
 
   afspraken.forEach((a) => {
@@ -321,10 +361,12 @@ export function dagTotalen(datum) {
       zonderOmzet += 1;
       return;
     }
-    omzetCent += a.omzet.bedragCent;
-    if (!a.omzet.betaald) openCent += a.omzet.bedragCent;
-    else if (a.omzet.methode === "cash") cashCent += a.omzet.bedragCent;
-    else bankCent += a.omzet.bedragCent;
+    const totaal = omzetTotaal(a.omzet);
+    productenCent += productenTotaal(a.omzet);
+    omzetCent += totaal;
+    if (!a.omzet.betaald) openCent += totaal;
+    else if (a.omzet.methode === "cash") cashCent += totaal;
+    else bankCent += totaal;
   });
 
   let km = 0;
@@ -340,10 +382,26 @@ export function dagTotalen(datum) {
     km: Math.round(km * 10) / 10,
     uren: Math.round((minuten / 60) * 100) / 100,
     omzetCent,
+    productenCent,
     cashCent,
     bankCent,
     openCent,
   };
+}
+
+/**
+ * Dagen die nog afgesloten moeten worden: alle dagen tot en met vandaag met
+ * minstens één afspraak waarvoor nog geen afsluiting bestaat. Nieuwste eerst.
+ */
+export function openDagen() {
+  const vandaag = vandaagISO();
+  const datums = new Set(
+    getAfspraken({ tot: vandaag }).map((a) => datumVan(a.start)),
+  );
+  return [...datums]
+    .filter((d) => !getAfsluiting(d))
+    .sort((a, b) => b.localeCompare(a))
+    .map((d) => dagTotalen(d));
 }
 
 export function getAfsluitingen() {

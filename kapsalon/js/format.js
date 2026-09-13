@@ -130,6 +130,18 @@ export function telHref(telefoon) {
   return `tel:${cijfers}`;
 }
 
+/**
+ * "06 12 34 56 78" -> "https://wa.me/31612345678" — opent WhatsApp met een
+ * leeg bericht, zodat Simone zelf kan typen.
+ */
+export function whatsappHref(telefoon) {
+  let cijfers = String(telefoon || "").replace(/\D/g, "");
+  if (cijfers.startsWith("00")) cijfers = cijfers.slice(2);
+  else if (cijfers.startsWith("06")) cijfers = `31${cijfers.slice(1)}`;
+  else if (cijfers.startsWith("6") && cijfers.length === 9) cijfers = `31${cijfers}`;
+  return `https://wa.me/${cijfers}`;
+}
+
 /** Voorkomt dat vrije tekst als HTML wordt uitgevoerd. */
 export function veilig(tekst) {
   return String(tekst ?? "").replace(/[&<>"']/g, (teken) => ({
