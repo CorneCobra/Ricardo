@@ -65,10 +65,10 @@ export function tijdVan(start) {
   return String(start).slice(11, 16);
 }
 
-/** "2026-09-20" -> Date op middernacht lokale tijd. */
+/** "2026-09-20" (of "2026-09") -> Date op middernacht lokale tijd. */
 export function alsDatum(isoDatum) {
   const [j, m, d] = String(isoDatum).slice(0, 10).split("-").map(Number);
-  return new Date(j, m - 1, d);
+  return new Date(j, m - 1, d || 1);
 }
 
 /** "Vandaag", "Morgen", "Gisteren" of "vrijdag 19 september". */
@@ -85,9 +85,21 @@ export function dagKort(isoDatum) {
   return dagKortOpmaak.format(alsDatum(isoDatum));
 }
 
-/** "september 2026" */
+/** "september 2026"; werkt met "2026-09-20" en met "2026-09". */
 export function maandLabel(isoDatum) {
   return maandOpmaak.format(alsDatum(isoDatum));
+}
+
+/** "2026-09-20" -> "2026-09" */
+export function maandVan(isoDatum) {
+  return String(isoDatum).slice(0, 7);
+}
+
+/** Maand n maanden verder of terug: ("2026-09", -1) -> "2026-08" */
+export function maandVerschuif(maand, n) {
+  const [j, m] = maand.split("-").map(Number);
+  const d = new Date(j, m - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
 /** Aantal hele dagen tussen twee ISO-datums (b - a). */

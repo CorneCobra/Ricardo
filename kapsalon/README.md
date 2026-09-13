@@ -50,9 +50,20 @@ In beide weergaven:
 Het lijstje dat op de achtergrond meegroeit. Naam, telefoonnummer, plaats, een
 notitie en de afstand heen en terug in kilometers.
 
-**Omzetstorting**
+**Overzicht**
 
-Bedrag en datum van een storting naar de bank, met het totaal van deze maand.
+Kies een maand en zie de winst, de omzet, de kosten en wat er nog te ontvangen
+is, plus cash, bank, gestort, het aantal afspraken en de kilometers en uren uit
+de afgesloten dagen. Winst is alle omzet van die maand min de kosten — dus
+inclusief afspraken die nog niet betaald zijn; *nog te ontvangen* staat er los
+naast.
+
+Onder de cijfers beheer je twee lijsten:
+
+- **Kosten** — bedrag, datum, waarvoor, en een bon (foto of PDF). De bon blijft
+  voorlopig in dit browservenster staan; de bedoeling is dat die later naar
+  Google Drive gaat.
+- **Omzetstortingen** — bedrag en datum van geld dat naar de bank is gebracht.
 
 **Afsluiten (dagafsluiting)**
 
@@ -100,7 +111,7 @@ js/store.js           alle gegevens in het geheugen + alle wijzigingen
 js/format.js          geld, datum, tijd en telefoon in Nederlandse notatie
 js/ui.js              dialoog- en meldinghulpjes
 js/views/*.js         één bestand per tabblad (afspraken, klanten,
-                      stortingen, dagafsluiting)
+                      dagafsluiting, overzicht)
 ```
 
 Bedragen worden intern in hele centen bewaard, zodat totalen niet gaan

@@ -223,6 +223,80 @@ export function verwijderStorting(id) {
   return true;
 }
 
+/* ----------------------------------------------------------------- kosten */
+
+export function getKosten({ maand } = {}) {
+  return state.kosten
+    .filter((k) => !maand || k.datum.startsWith(maand))
+    .sort((a, b) => b.datum.localeCompare(a.datum));
+}
+
+export function voegKostenToe({ datum, omschrijving, bedragCent, bon = null }) {
+  const post = { id: nieuwId(), datum, omschrijving, bedragCent, bon };
+  state.kosten.push(post);
+  melden();
+  return post;
+}
+
+export function verwijderKosten(id) {
+  const index = state.kosten.findIndex((k) => k.id === id);
+  if (index === -1) return false;
+  state.kosten.splice(index, 1);
+  melden();
+  return true;
+}
+
+/* ------------------------------------------------------------ maandcijfers */
+
+/**
+ * Alles van één maand ("2026-09") op een rij: omzet uit de afspraken van die
+ * maand, de kosten, de winst (alle omzet min kosten, dus inclusief wat nog
+ * binnen moet komen) en wat er nog te ontvangen is. Kilometers en uren komen
+ * uit de dagen die je hebt afgesloten.
+ */
+export function maandTotalen(maand) {
+  let omzetCent = 0;
+  let cashCent = 0;
+  let bankCent = 0;
+  let openCent = 0;
+  let aantalAfspraken = 0;
+
+  getAfspraken()
+    .filter((a) => datumVan(a.start).startsWith(maand))
+    .forEach((a) => {
+      aantalAfspraken += 1;
+      if (!a.omzet) return;
+      omzetCent += a.omzet.bedragCent;
+      if (!a.omzet.betaald) openCent += a.omzet.bedragCent;
+      else if (a.omzet.methode === "cash") cashCent += a.omzet.bedragCent;
+      else bankCent += a.omzet.bedragCent;
+    });
+
+  const kostenCent = getKosten({ maand }).reduce((som, k) => som + k.bedragCent, 0);
+  const gestortCent = state.stortingen
+    .filter((s) => s.datum.startsWith(maand))
+    .reduce((som, s) => som + s.bedragCent, 0);
+
+  const dagen = state.afsluitingen.filter((a) => a.datum.startsWith(maand));
+  const km = dagen.reduce((som, d) => som + (Number(d.km) || 0), 0);
+  const uren = dagen.reduce((som, d) => som + (Number(d.uren) || 0), 0);
+
+  return {
+    maand,
+    aantalAfspraken,
+    omzetCent,
+    cashCent,
+    bankCent,
+    openCent,
+    kostenCent,
+    winstCent: omzetCent - kostenCent,
+    gestortCent,
+    afgeslotenDagen: dagen.length,
+    km: Math.round(km * 10) / 10,
+    uren: Math.round(uren * 100) / 100,
+  };
+}
+
 /* ----------------------------------------------------------- dagafsluiting */
 
 /**

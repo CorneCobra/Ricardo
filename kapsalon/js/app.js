@@ -6,10 +6,10 @@
 import { subscribe } from "./store.js";
 import * as afspraken from "./views/afspraken.js";
 import * as klanten from "./views/klanten.js";
-import * as stortingen from "./views/stortingen.js";
+import * as overzicht from "./views/overzicht.js";
 import * as afsluiting from "./views/dagafsluiting.js";
 
-const views = { afspraken, klanten, stortingen, afsluiting };
+const views = { afspraken, klanten, afsluiting, overzicht };
 const viewEl = document.getElementById("view");
 
 let actief = "afspraken";

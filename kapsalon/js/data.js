@@ -59,6 +59,13 @@ export function maakStartData() {
     { id: "s2", datum: dag(-3), bedragCent: 7500 },
   ];
 
+  const kosten = [
+    { id: "ko1", datum: dag(-2), omschrijving: "Kleurmiddelen en shampoo", bedragCent: 8995, bon: { naam: "bon-groothandel.jpg", type: "image/jpeg", dataUrl: null } },
+    { id: "ko2", datum: dag(-6), omschrijving: "Benzine", bedragCent: 6200, bon: null },
+    { id: "ko3", datum: dag(-12), omschrijving: "Schaar laten slijpen", bedragCent: 2250, bon: null },
+    { id: "ko4", datum: dag(-25), omschrijving: "Telefoonabonnement", bedragCent: 3500, bon: null },
+  ];
+
   // Eén dag is al afgesloten; gisteren staat nog open, zodat de demo iets te
   // doen heeft op het tabblad Dagafsluiting.
   const afsluitingen = [
@@ -76,5 +83,5 @@ export function maakStartData() {
     },
   ];
 
-  return { klanten, afspraken, stortingen, afsluitingen };
+  return { klanten, afspraken, stortingen, kosten, afsluitingen };
 }
