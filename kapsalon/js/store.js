@@ -115,6 +115,7 @@ export function voegAfspraakToe(velden) {
     ...velden,
   };
   state.afspraken.push(afspraak);
+  herberekenAfsluitingen(datumVan(afspraak.start));
   melden();
   return afspraak;
 }
@@ -122,7 +123,9 @@ export function voegAfspraakToe(velden) {
 export function wijzigAfspraak(id, velden) {
   const afspraak = getAfspraak(id);
   if (!afspraak) return null;
+  const oudeDatum = datumVan(afspraak.start);
   Object.assign(afspraak, velden);
+  herberekenAfsluitingen(oudeDatum, datumVan(afspraak.start));
   melden();
   return afspraak;
 }
@@ -131,8 +134,12 @@ export function wijzigAfspraak(id, velden) {
 export function verplaatsAfspraak(id, nieuweStart) {
   const afspraak = getAfspraak(id);
   if (!afspraak || nieuweStart === afspraak.start) return afspraak;
+  const oudeDatum = datumVan(afspraak.start);
   afspraak.verplaatstVan = afspraak.start;
   afspraak.start = nieuweStart;
+  // De omzet hangt aan de afspraak en verhuist dus mee; beide dagen opnieuw
+  // doorrekenen zodat een afgesloten dag blijft kloppen.
+  herberekenAfsluitingen(oudeDatum, datumVan(nieuweStart));
   melden();
   return afspraak;
 }
@@ -140,7 +147,9 @@ export function verplaatsAfspraak(id, nieuweStart) {
 export function verwijderAfspraak(id) {
   const index = state.afspraken.findIndex((a) => a.id === id);
   if (index === -1) return false;
+  const datum = datumVan(state.afspraken[index].start);
   state.afspraken.splice(index, 1);
+  herberekenAfsluitingen(datum);
   melden();
   return true;
 }
@@ -164,6 +173,7 @@ export function zetOmzet(afspraakId, { bedragCent, producten = [], betaald, meth
     betaald: Boolean(betaald),
     methode: betaald ? methode : null,
   };
+  herberekenAfsluitingen(datumVan(afspraak.start));
   melden();
   return afspraak;
 }
@@ -423,12 +433,18 @@ export function sluitDag({ datum, km, uren }) {
     datum,
     km: Number(km),
     uren: Number(uren),
+    // Handmatig gecorrigeerde kilometers of uren blijven staan als de dag
+    // later automatisch wordt bijgewerkt.
+    kmHandmatig: Number(km) !== totalen.km,
+    urenHandmatig: Number(uren) !== totalen.uren,
     aantalAfspraken: totalen.aantalAfspraken,
     omzetCent: totalen.omzetCent,
+    productenCent: totalen.productenCent,
     cashCent: totalen.cashCent,
     bankCent: totalen.bankCent,
     openCent: totalen.openCent,
     afgeslotenOp: new Date().toISOString().slice(0, 16),
+    bijgewerktOp: null,
   };
 
   const bestaand = getAfsluiting(datum);
@@ -441,6 +457,31 @@ export function sluitDag({ datum, km, uren }) {
   state.afsluitingen.push(afsluiting);
   melden();
   return afsluiting;
+}
+
+/**
+ * Werkt de afsluiting van een of meer dagen bij nadat er iets aan de
+ * afspraken van die dag is veranderd. Bedragen volgen altijd de afspraken;
+ * kilometers en uren alleen als ze bij het afsluiten niet handmatig zijn
+ * aangepast.
+ */
+function herberekenAfsluitingen(...datums) {
+  new Set(datums.filter(Boolean)).forEach((datum) => {
+    const afsluiting = getAfsluiting(datum);
+    if (!afsluiting) return;
+    const totalen = dagTotalen(datum);
+    Object.assign(afsluiting, {
+      aantalAfspraken: totalen.aantalAfspraken,
+      omzetCent: totalen.omzetCent,
+      productenCent: totalen.productenCent,
+      cashCent: totalen.cashCent,
+      bankCent: totalen.bankCent,
+      openCent: totalen.openCent,
+      bijgewerktOp: new Date().toISOString().slice(0, 16),
+    });
+    if (!afsluiting.kmHandmatig) afsluiting.km = totalen.km;
+    if (!afsluiting.urenHandmatig) afsluiting.uren = totalen.uren;
+  });
 }
 
 /** Maakt een afgesloten dag weer open, bijvoorbeeld om omzet te corrigeren. */

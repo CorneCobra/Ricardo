@@ -773,11 +773,13 @@ export function openVerplaatsDialoog(afspraakId) {
     if (totaal && form.datum.value !== oudeDatum) {
       regels.push(`De omzet van ${euro(totaal)} telt daarna mee op de nieuwe dag.`);
     }
-    if (getAfsluiting(oudeDatum)) {
-      regels.push(`${hoofdletter(dagLabel(oudeDatum))} is al afgesloten; die afsluiting klopt daarna niet meer.`);
-    }
-    if (form.datum.value !== oudeDatum && getAfsluiting(form.datum.value)) {
-      regels.push(`${hoofdletter(dagLabel(form.datum.value))} is al afgesloten; werk die afsluiting daarna bij.`);
+    const afgesloten = [oudeDatum, form.datum.value]
+      .filter((d, i, lijst) => d && lijst.indexOf(d) === i && getAfsluiting(d))
+      .map((d) => dagLabel(d));
+    if (afgesloten.length) {
+      regels.push(
+        `${afgesloten.join(" en ")} ${afgesloten.length === 1 ? "is" : "zijn"} al afgesloten; die afsluiting wordt automatisch bijgewerkt.`,
+      );
     }
     gevolgen.textContent = regels.join(" ");
     gevolgen.hidden = regels.length === 0;
