@@ -92,9 +92,10 @@ heropenen om iets te corrigeren.
 
 > De omzet hangt aan de afspraak. Verplaats je een afspraak naar een andere
 > dag, dan verhuist de omzet mee (het scherm waarschuwt daarvoor); verwijder je
-> een afspraak, dan verdwijnt de omzet uit je cijfers. Een al afgesloten dag
-> wordt daar niet automatisch op bijgewerkt — heropen die dag en sluit hem
-> opnieuw af.
+> een afspraak, dan verdwijnt de omzet uit je cijfers. Raakt dat een dag die al
+> is afgesloten, dan rekent die afsluiting zichzelf bij — je ziet dan
+> *bijgewerkt* bij de datum staan. Kilometers of uren die je handmatig hebt
+> gecorrigeerd blijven daarbij staan; alleen de bedragen volgen de afspraken.
 
 ## Lokaal draaien
 

@@ -74,12 +74,16 @@ export function maakStartData() {
       datum: dag(-3),
       km: 13,
       uren: 1.75,
+      kmHandmatig: false,
+      urenHandmatig: false,
       aantalAfspraken: 2,
       omzetCent: 8995,
+      productenCent: 1495,
       cashCent: 8995,
       bankCent: 0,
       openCent: 0,
       afgeslotenOp: `${dag(-3)}T17:10`,
+      bijgewerktOp: null,
     },
   ];
 

@@ -148,7 +148,10 @@ function vulDagDialoog(datum) {
 
   document.getElementById("dag-titel").textContent = dagLabel(datum);
   document.getElementById("dag-context").textContent = afsluiting
-    ? `Afgesloten · vastgelegd ${dagKort(afsluiting.afgeslotenOp)} ${tijdVan(afsluiting.afgeslotenOp)}`
+    ? `Afgesloten · vastgelegd ${dagKort(afsluiting.afgeslotenOp)} ${tijdVan(afsluiting.afgeslotenOp)}` +
+      (afsluiting.bijgewerktOp
+        ? ` · bijgewerkt ${dagKort(afsluiting.bijgewerktOp)} ${tijdVan(afsluiting.bijgewerktOp)}`
+        : "")
     : `${totalen.aantalAfspraken} ${totalen.aantalAfspraken === 1 ? "afspraak" : "afspraken"} op deze dag`;
 
   document.getElementById("dag-inhoud").innerHTML = `
