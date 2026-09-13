@@ -20,12 +20,11 @@ te gebruiken, tussen twee klanten door.
 Twee weergaven, met de schakelaar **Lijst / Dag** bovenin.
 
 *Lijst* — alle komende afspraken, gegroepeerd per dag, met naam, behandeling,
-tijdstip, duur, plaats en telefoonnummer (aantikken = bellen).
+tijdstip, duur, plaats en een WhatsApp-knop.
 
 *Dag* — een tijdlijn van 08:00 tot 20:00 voor één dag, met pijltjes om te
 bladeren. Afspraken staan als blokken op hun eigen tijd en hoogte; tik op een
-vrije plek en de nieuwe-afspraakdialoog staat meteen op dat kwartier. Tik op
-een blok voor omzet, verplaatsen of verwijderen.
+vrije plek en de nieuwe-afspraakdialoog staat meteen op dat kwartier.
 
 **Tik op een afspraak** en je krijgt één werkscherm met alles wat erbij hoort:
 
