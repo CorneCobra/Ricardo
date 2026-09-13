@@ -108,12 +108,11 @@ export function dagenVerschil(a, b) {
   return Math.round((alsDatum(b) - alsDatum(a)) / msPerDag);
 }
 
-/** 90 -> "1,5 uur", 45 -> "45 min" */
-export function duurLabel(minuten) {
+/** Zelfde duur, maar zo kort mogelijk: "45m", "1u", "1,5u". */
+export function duurKort(minuten) {
   if (!minuten) return "";
-  if (minuten < 60) return `${minuten} min`;
-  const uren = minuten / 60;
-  return `${getal(uren)} uur`;
+  if (minuten < 60) return `${minuten}m`;
+  return `${getal(minuten / 60)}u`;
 }
 
 /** Getal in Nederlandse notatie, zonder onnodige decimalen. */

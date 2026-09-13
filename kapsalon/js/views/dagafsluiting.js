@@ -25,7 +25,7 @@ import {
   veilig,
 } from "../format.js";
 import { melding, openDialoog } from "../ui.js";
-import { koppelAfspraakKlik, omzetBadge } from "./afspraken.js";
+import { koppelAfspraakKlik, omzetRegel } from "./afspraken.js";
 
 // De dag die op dit moment in de dialoog staat.
 let dialoogDatum = null;
@@ -39,8 +39,7 @@ export function render(root) {
 
     ${
       open.length
-        ? `<p class="agenda__hint">${open.length} ${open.length === 1 ? "dag wacht" : "dagen wachten"} nog op een afsluiting. Tik op een dag om hem af te sluiten.</p>
-           <ul class="lijst lijst--dicht">${open.map(openRegel).join("")}</ul>`
+        ? `<ul class="lijst lijst--dicht">${open.map(openRegel).join("")}</ul>`
         : `<p class="leeg">Alles is afgesloten. Netjes.</p>`
     }
 
@@ -78,13 +77,8 @@ function openRegel(totalen) {
         <span class="rij__bedrag">${euro(totalen.omzetCent)}</span>
       </div>
       <div class="rij__meta">
-        <span>${totalen.aantalAfspraken} ${totalen.aantalAfspraken === 1 ? "afspraak" : "afspraken"}</span>
-        <span>${getal(totalen.km)} km · ${getal(totalen.uren, 2)} uur</span>
-        ${
-          totalen.zonderOmzet
-            ? `<span class="rij__let-op">${totalen.zonderOmzet} zonder omzet</span>`
-            : ""
-        }
+        <span>${totalen.aantalAfspraken}× · ${getal(totalen.km)} km · ${getal(totalen.uren, 2)} uur</span>
+        ${totalen.zonderOmzet ? `<span class="rij__let-op">${totalen.zonderOmzet} zonder omzet</span>` : ""}
       </div>
     </li>
   `;
@@ -100,7 +94,6 @@ function afgeslotenRegel(afsluiting) {
         <span class="rij__bedrag">${euro(afsluiting.omzetCent)}</span>
       </div>
       <div class="rij__meta">
-        <span>✅ afgesloten</span>
         <span>${getal(afsluiting.km)} km · ${getal(afsluiting.uren, 2)} uur</span>
       </div>
     </li>
@@ -156,22 +149,25 @@ function vulDagDialoog(datum) {
 
   document.getElementById("dag-inhoud").innerHTML = `
     <div class="paneel paneel--totalen paneel--plat">
-      <div class="cijfer cijfer--groot"><span>Omzet</span><strong>${euro(totalen.omzetCent)}</strong></div>
-      <div class="cijfers">
-        <div class="cijfer"><span>Cash</span><strong>${euro(totalen.cashCent)}</strong></div>
-        <div class="cijfer"><span>Bank</span><strong>${euro(totalen.bankCent)}</strong></div>
-        <div class="cijfer ${totalen.openCent ? "cijfer--open" : ""}"><span>Openstaand</span><strong>${euro(totalen.openCent)}</strong></div>
+      <div class="cijfers cijfers--duo">
+        <div class="cijfer cijfer--groot"><span>Omzet</span><strong>${euro(totalen.omzetCent)}</strong></div>
+        <div class="cijfer ${totalen.openCent ? "cijfer--open" : ""}">
+          <span>Te ontvangen</span><strong>${euro(totalen.openCent)}</strong>
+        </div>
       </div>
-      ${
-        totalen.productenCent
-          ? `<p class="hint">Waarvan ${euro(totalen.productenCent)} aan verkochte producten.</p>`
-          : ""
-      }
+      <details class="sectie sectie--plat">
+        <summary>Details</summary>
+        <div class="cijfers">
+          <div class="cijfer"><span>Cash</span><strong>${euro(totalen.cashCent)}</strong></div>
+          <div class="cijfer"><span>Bank</span><strong>${euro(totalen.bankCent)}</strong></div>
+          <div class="cijfer"><span>Producten</span><strong>${euro(totalen.productenCent)}</strong></div>
+        </div>
+      </details>
     </div>
 
     ${
       totalen.zonderOmzet
-        ? `<p class="waarschuwing">Nog ${totalen.zonderOmzet} ${totalen.zonderOmzet === 1 ? "afspraak" : "afspraken"} zonder omzet. Tik de afspraak aan om die in te vullen.</p>`
+        ? `<p class="waarschuwing">${totalen.zonderOmzet} ${totalen.zonderOmzet === 1 ? "afspraak" : "afspraken"} zonder omzet.</p>`
         : ""
     }
 
@@ -203,7 +199,7 @@ function afspraakRegel(afspraak) {
         <strong>${veilig(klant ? klant.naam : "Onbekende klant")}</strong>
         <span class="rij__bedrag">${tijdvak(afspraak.start, afspraak.duurMin)}</span>
       </div>
-      <p class="badges">${omzetBadge(afspraak.omzet)}</p>
+      <div class="rij__meta">${omzetRegel(afspraak.omzet)}</div>
     </li>
   `;
 }
