@@ -434,7 +434,194 @@ textarea { min-height: 66px; resize: vertical; }
 
 .dlg__acties .knop { flex: 1; }
 
+/* ------------------------------------------------- weergave-schakelaar */
+
+.wissel {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin-bottom: 0.75rem;
+  background: var(--neutraal-bg);
+  border-radius: 999px;
+}
+
+.wissel__knop {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0.45rem 1.1rem;
+  min-height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.wissel__knop--actief { background: var(--surface); color: var(--accent-dark); box-shadow: var(--schaduw); }
+
+/* ------------------------------------------------------------ dagkiezer */
+
+.dagkiezer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.dagkiezer__midden {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  text-align: center;
+}
+
+.dagkiezer__midden strong { font-size: 1.05rem; }
+
+.dagkiezer__midden input[type="date"] {
+  width: auto;
+  min-height: 36px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-color: transparent;
+  background: none;
+  text-align: center;
+}
+
+.knop--rond {
+  min-width: 44px;
+  padding: 0.45rem 0.8rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------- dagagenda */
+
+.agenda__hint {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.agenda {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--schaduw);
+  overflow: hidden;
+}
+
+.agenda__raster { position: absolute; inset: 0; cursor: copy; }
+
+.agenda__uur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
+  pointer-events: none;
+}
+
+.agenda__uur span {
+  position: absolute;
+  top: 2px;
+  left: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--surface);
+  padding-right: 0.2rem;
+}
+
+.blok {
+  position: absolute;
+  left: 3.4rem;
+  right: 0.5rem;
+  appearance: none;
+  text-align: left;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  overflow: hidden;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--accent);
+  border-left: 4px solid var(--accent-dark);
+  border-radius: 8px;
+  background: var(--accent-zacht);
+  color: var(--accent-dark);
+  cursor: pointer;
+}
+
+.blok--betaald { border-color: var(--ok); border-left-color: var(--ok); background: var(--ok-bg); color: var(--ok); }
+.blok--open { border-color: var(--open); border-left-color: var(--open); background: var(--open-bg); color: var(--open); }
+
+.blok__tijd { font-size: 0.72rem; opacity: 0.85; }
+.blok__naam { font-weight: 700; font-size: 0.9rem; }
+.blok__detail { font-size: 0.78rem; opacity: 0.9; }
+
+.blok--kort {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  padding-block: 0.15rem;
+}
+
+.blok:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+/* --------------------------------------------------------- vrije plekken */
+
+.slots { display: grid; gap: 0.35rem; }
+.slots__kop { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.slots__rij { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+.slot {
+  appearance: none;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.35rem 0.7rem;
+  min-height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-dark);
+  cursor: pointer;
+}
+
+.slot:hover { background: var(--accent-zacht); border-color: var(--accent-zacht); }
+
+/* -------------------------------------------------------- dagafsluiting */
+
+.paneel--totalen { gap: 0.7rem; }
+
+.cijfers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.cijfer { display: grid; gap: 0.1rem; }
+.cijfer span { font-size: 0.78rem; color: var(--muted); }
+.cijfer strong { font-size: 1rem; }
+.cijfer--groot strong { font-size: 1.6rem; color: var(--accent-dark); }
+.cijfer--open strong { color: var(--open); }
+
+.waarschuwing {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--open-bg);
+  color: var(--open);
+  font-size: 0.9rem;
+}
+
+.acties__knoppen { display: grid; gap: 0.5rem; }
+
 /* ------------------------------------------------------------- tabbalk */
+
 
 .tabbar {
   position: fixed;

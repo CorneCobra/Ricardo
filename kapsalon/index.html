@@ -31,8 +31,8 @@
       <button type="button" class="tab" data-tab="stortingen">
         <span class="tab__icon" aria-hidden="true">🏦</span><span>Storting</span>
       </button>
-      <button type="button" class="tab" data-tab="kmuren">
-        <span class="tab__icon" aria-hidden="true">🚗</span><span>Km &amp; uren</span>
+      <button type="button" class="tab" data-tab="afsluiting">
+        <span class="tab__icon" aria-hidden="true">✅</span><span>Afsluiten</span>
       </button>
     </nav>
   </div>
@@ -53,12 +53,9 @@
         <input id="klant-telefoon" name="telefoon" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required />
       </div>
       <div class="veld">
-        <label for="klant-adres">Adres</label>
-        <input id="klant-adres" name="adres" type="text" placeholder="Kerkstraat 12" />
-      </div>
-      <div class="veld">
         <label for="klant-plaats">Plaats</label>
         <input id="klant-plaats" name="plaats" type="text" placeholder="Apeldoorn" />
+        <p class="hint">Wordt overgenomen als locatie van de afspraak.</p>
       </div>
       <div class="veld">
         <label for="klant-afstand">Afstand heen en terug (km)</label>
@@ -100,6 +97,12 @@
           <input id="afspraak-tijd" name="tijd" type="time" step="300" required />
         </div>
       </div>
+      <p class="hint" id="afspraak-dagoverzicht"></p>
+      <div class="slots" id="afspraak-slots" hidden>
+        <span class="slots__kop">Vrij op deze dag:</span>
+        <div class="slots__rij" id="afspraak-slots-rij"></div>
+      </div>
+
       <div class="veld">
         <label for="afspraak-duur">Duur</label>
         <select id="afspraak-duur" name="duurMin">
@@ -128,10 +131,10 @@
       <div class="veld">
         <label for="afspraak-locatie">Locatie</label>
         <div class="veld__rij">
-          <input id="afspraak-locatie" name="locatie" type="text" placeholder="Adres van de klant" />
+          <input id="afspraak-locatie" name="locatie" type="text" placeholder="Plaats" />
           <button type="button" class="knop knop--stil knop--klein" id="afspraak-salon">Salon</button>
         </div>
-        <p class="hint">Wordt automatisch gevuld met het adres van de klant.</p>
+        <p class="hint">Wordt automatisch gevuld met de plaats van de klant.</p>
       </div>
 
       <p class="dlg__fout" data-fout hidden></p>
@@ -192,12 +195,34 @@
         </div>
       </div>
 
+      <p class="hint" id="verplaats-dagoverzicht"></p>
+      <div class="slots" id="verplaats-slots" hidden>
+        <span class="slots__kop">Vrij op deze dag:</span>
+        <div class="slots__rij" id="verplaats-slots-rij"></div>
+      </div>
+
       <p class="dlg__fout" data-fout hidden></p>
       <div class="dlg__acties">
         <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
         <button type="submit" class="knop">Verplaatsen</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- Dialoog: wat wil je met deze afspraak? (vanuit de dagagenda) -->
+  <dialog id="dlg-acties" class="dlg">
+    <div class="dlg__form">
+      <h2 id="acties-titel">Afspraak</h2>
+      <p class="dlg__context" id="acties-context"></p>
+      <div class="acties__knoppen">
+        <button type="button" class="knop" data-actie="omzet">Omzet registreren</button>
+        <button type="button" class="knop knop--stil" data-actie="verplaats">Verplaatsen</button>
+        <button type="button" class="knop knop--kaal" data-actie="verwijder">Verwijderen</button>
+      </div>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Sluiten</button>
+      </div>
+    </div>
   </dialog>
 
   <script type="module" src="js/app.js"></script>

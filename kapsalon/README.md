@@ -17,8 +17,18 @@ te gebruiken, tussen twee klanten door.
 
 **Afspraken** (startscherm)
 
-- Alle komende afspraken, gegroepeerd per dag, met naam, behandeling, tijdstip,
-  duur, locatie en telefoonnummer (aantikken = bellen).
+Twee weergaven, met de schakelaar **Lijst / Dag** bovenin.
+
+*Lijst* — alle komende afspraken, gegroepeerd per dag, met naam, behandeling,
+tijdstip, duur, plaats en telefoonnummer (aantikken = bellen).
+
+*Dag* — een tijdlijn van 08:00 tot 20:00 voor één dag, met pijltjes om te
+bladeren. Afspraken staan als blokken op hun eigen tijd en hoogte; tik op een
+vrije plek en de nieuwe-afspraakdialoog staat meteen op dat kwartier. Tik op
+een blok voor omzet, verplaatsen of verwijderen.
+
+In beide weergaven:
+
 - Per afspraak zie je in één oogopslag de omzetstatus:
   - grijs — nog geen omzet geregistreerd;
   - oranje — bedrag bekend, nog niet betaald;
@@ -28,24 +38,32 @@ te gebruiken, tussen twee klanten door.
 - Met *Toon ook afgelopen afspraken* haal je de afgelopen dagen erbij, zodat je
   omzet van gisteren alsnog kunt invullen.
 - **+ Nieuwe afspraak**: kies een bestaande klant of maak er direct een nieuwe
-  aan. Het adres van de klant wordt automatisch overgenomen als locatie; met de
+  aan. De plaats van de klant wordt automatisch overgenomen als locatie; met de
   knop *Salon* zet je de afspraak in de salon.
+- **Botst het?** Bij inplannen en verplaatsen zie je welke afspraken al op die
+  dag staan, krijg je knopjes met vrije tijdstippen, en volgt er een
+  waarschuwing als je over een bestaande afspraak heen plant. Je kunt die
+  waarschuwing negeren door nog een keer op Opslaan te klikken.
 
 **Klanten**
 
-Het lijstje dat op de achtergrond meegroeit. Naam, telefoonnummer, adres, een
+Het lijstje dat op de achtergrond meegroeit. Naam, telefoonnummer, plaats, een
 notitie en de afstand heen en terug in kilometers.
 
 **Omzetstorting**
 
 Bedrag en datum van een storting naar de bank, met het totaal van deze maand.
 
-**Km & uren**
+**Afsluiten (dagafsluiting)**
 
-Per dag kilometers en uren. De kilometers worden voorgesteld op basis van de
-vaste afstand van de klanten die je die dag hebt staan (dezelfde klant twee keer
-op een dag telt één rit), en zijn altijd te overschrijven. Sla je dezelfde datum
-nog eens op, dan wordt de bestaande registratie bijgewerkt.
+Kies een dag en zie wat die heeft opgeleverd: de omzet, gesplitst naar cash,
+bank en nog openstaand, het aantal afspraken, de gereden kilometers en de
+gewerkte uren. Die laatste twee worden berekend uit de afspraken van die dag —
+kilometers uit de vaste afstand per klant (dezelfde klant twee keer op een dag
+telt als één rit), uren uit de duur van de afspraken — en blijven corrigeerbaar
+voor je de dag vastzet. Staat er nog een afspraak zonder omzet, dan waarschuwt
+het scherm en kun je die omzet er meteen invullen. Een afgesloten dag kun je
+heropenen om iets te corrigeren.
 
 ## Lokaal draaien
 
@@ -81,7 +99,8 @@ js/data.js            de proefgegevens (datums relatief aan vandaag)
 js/store.js           alle gegevens in het geheugen + alle wijzigingen
 js/format.js          geld, datum, tijd en telefoon in Nederlandse notatie
 js/ui.js              dialoog- en meldinghulpjes
-js/views/*.js         één bestand per tabblad
+js/views/*.js         één bestand per tabblad (afspraken, klanten,
+                      stortingen, dagafsluiting)
 ```
 
 Bedragen worden intern in hele centen bewaard, zodat totalen niet gaan

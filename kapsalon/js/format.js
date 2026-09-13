@@ -128,3 +128,21 @@ export function veilig(tekst) {
     "'": "&#39;",
   })[teken]);
 }
+
+/** "10:30" -> 630 minuten sinds middernacht. */
+export function minutenVan(tijd) {
+  const [u, m] = String(tijd).slice(0, 5).split(":").map(Number);
+  return u * 60 + m;
+}
+
+/** 630 -> "10:30" */
+export function tijdVanMinuten(minuten) {
+  const m = Math.max(0, Math.round(minuten));
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+/** "10:00 – 11:00" voor een afspraak. */
+export function tijdvak(start, duurMin) {
+  const begin = minutenVan(tijdVan(start));
+  return `${tijdVan(start)} – ${tijdVanMinuten(begin + (duurMin || 0))}`;
+}
