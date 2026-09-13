@@ -56,28 +56,29 @@ export function render(root) {
         <span>Winst</span>
         <strong>${euro(t.winstCent)}</strong>
       </div>
-      <div class="cijfers">
+      <div class="cijfers cijfers--duo">
         <div class="cijfer"><span>Omzet</span><strong>${euro(t.omzetCent)}</strong></div>
         <div class="cijfer"><span>Kosten</span><strong>${euro(t.kostenCent)}</strong></div>
-        <div class="cijfer ${t.openCent ? "cijfer--open" : ""}">
-          <span>Nog te ontvangen</span><strong>${euro(t.openCent)}</strong>
+      </div>
+      <details class="sectie sectie--plat">
+        <summary>Details ${t.openCent ? `<span class="sectie__tel sectie__tel--open">${euro(t.openCent)} open</span>` : ""}</summary>
+        <div class="cijfers">
+          <div class="cijfer ${t.openCent ? "cijfer--open" : ""}">
+            <span>Te ontvangen</span><strong>${euro(t.openCent)}</strong>
+          </div>
+          <div class="cijfer"><span>Cash</span><strong>${euro(t.cashCent)}</strong></div>
+          <div class="cijfer"><span>Bank</span><strong>${euro(t.bankCent)}</strong></div>
         </div>
-      </div>
-      <div class="cijfers">
-        <div class="cijfer"><span>Cash</span><strong>${euro(t.cashCent)}</strong></div>
-        <div class="cijfer"><span>Bank</span><strong>${euro(t.bankCent)}</strong></div>
-        <div class="cijfer"><span>Gestort</span><strong>${euro(t.gestortCent)}</strong></div>
-      </div>
-      <div class="cijfers">
-        <div class="cijfer"><span>Afspraken</span><strong>${t.aantalAfspraken}</strong></div>
-        <div class="cijfer"><span>Kilometers</span><strong>${getal(t.km)} km</strong></div>
-        <div class="cijfer"><span>Gewerkt</span><strong>${getal(t.uren, 2)} uur</strong></div>
-      </div>
-      <p class="hint">
-        Winst is alle omzet van deze maand min de kosten, dus inclusief wat nog
-        niet betaald is. Kilometers en uren komen uit de dagen die je hebt
-        afgesloten (${t.afgeslotenDagen}).
-      </p>
+        <div class="cijfers">
+          <div class="cijfer"><span>Gestort</span><strong>${euro(t.gestortCent)}</strong></div>
+          <div class="cijfer"><span>Afspraken</span><strong>${t.aantalAfspraken}</strong></div>
+          <div class="cijfer"><span>Producten</span><strong>${euro(t.productenCent)}</strong></div>
+        </div>
+        <div class="cijfers cijfers--duo">
+          <div class="cijfer"><span>Kilometers</span><strong>${getal(t.km)} km</strong></div>
+          <div class="cijfer"><span>Gewerkt</span><strong>${getal(t.uren, 2)} uur</strong></div>
+        </div>
+      </details>
     </div>
 
     <div class="kop kop--sectie">
@@ -139,9 +140,10 @@ function kostenRegel(post) {
         <span class="kaart__regel kaart__regel--stil">
           ${veilig(post.omschrijving)} · ${veilig(dagKort(post.datum))}
         </span>
-        ${post.bon ? bonChip(post.bon) : `<span class="kaart__regel kaart__regel--stil">Geen bon</span>`}
+        ${post.bon ? bonChip(post.bon) : ""}
       </div>
-      <button type="button" class="knop knop--kaal knop--klein" data-verwijder-kosten="${post.id}">Verwijderen</button>
+      <button type="button" class="knop knop--kaal knop--klein" data-verwijder-kosten="${post.id}"
+        aria-label="Kostenpost verwijderen">✕</button>
     </li>
   `;
 }
@@ -160,7 +162,8 @@ function stortingRegel(storting) {
         <strong>${euro(storting.bedragCent)}</strong>
         <span class="kaart__regel kaart__regel--stil">${veilig(dagKort(storting.datum))}</span>
       </div>
-      <button type="button" class="knop knop--kaal knop--klein" data-verwijder-storting="${storting.id}">Verwijderen</button>
+      <button type="button" class="knop knop--kaal knop--klein" data-verwijder-storting="${storting.id}"
+        aria-label="Storting verwijderen">✕</button>
     </li>
   `;
 }

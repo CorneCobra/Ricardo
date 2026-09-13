@@ -19,32 +19,37 @@ te gebruiken, tussen twee klanten door.
 
 Twee weergaven, met de schakelaar **Lijst / Dag** bovenin.
 
-*Lijst* — alle komende afspraken, gegroepeerd per dag, met naam, behandeling,
-tijdstip, duur, plaats en een WhatsApp-knop.
+*Lijst* — alle komende afspraken, gegroepeerd per dag. Per afspraak twee
+regels: groot het tijdstip en de naam, klein daaronder behandeling, plaats,
+duur en (als die er is) het bedrag. Links een gekleurde stip voor de status —
+grijs is nog geen omzet, oranje is onbetaald, groen is betaald — en rechts een
+WhatsApp-knop.
 
 *Dag* — een tijdlijn van 08:00 tot 20:00 voor één dag, met pijltjes om te
 bladeren. Afspraken staan als blokken op hun eigen tijd en hoogte; tik op een
 vrije plek en de nieuwe-afspraakdialoog staat meteen op dat kwartier.
 
-**Tik op een afspraak** en je krijgt één werkscherm met alles wat erbij hoort:
+**Tik op een afspraak** en je krijgt één werkscherm. Direct zichtbaar is
+alleen wat je meestal nodig hebt: het **bedrag** en de **betaling** als één rij
+(*Nog niet* · *Cash* · *Bank*, dus één tik). De rest zit in drie secties die je
+openklapt als je ze nodig hebt; staat er al iets in, dan zie je dat aan de
+samenvatting ernaast:
 
-- **Omzet & betaling** — het bedrag van de behandeling, losse **verkochte
-  producten** (tekst + bedrag, zoveel als je wilt) en de betaling als één rij:
-  *Nog niet* · *Cash* · *Bank*, dus één tik.
+- **Producten** — losse verkopen (tekst + bedrag), met aantal en totaal in de
+  kop.
 - **Notities** — een notitie bij deze afspraak, een notitie over de klant die
   bij elke afspraak blijft staan, en daaronder wat je de vorige keren hebt
   opgeschreven.
-- **Vervolgafspraak** — meteen inplannen met knopjes voor 1 tot 12 weken
-  later, en daarna prikken in dezelfde tijdkiezer als bij een nieuwe afspraak.
-- Onderin **Verplaatsen** en **Verwijderen**.
+- **Vervolgafspraak** — openklappen is de keuze om er een te plannen: knopjes
+  voor 1 tot 12 weken later plus dezelfde tijdkiezer als bij een nieuwe
+  afspraak. De gekozen dag en tijd staan in de kop.
+
+Onderin **Verplaatsen** en **Verwijderen**.
 
 Verder in beide weergaven:
 
 - Een **WhatsApp-knop** per afspraak: opent de chat met die klant, met een leeg
   bericht.
-- De omzetstatus als badge: grijs (nog niets geregistreerd), oranje (bedrag
-  bekend, niet betaald) of groen (betaald, met cash of bank erbij), plus een
-  losse badge als er producten verkocht zijn.
 - Met *Toon ook afgelopen afspraken* haal je de afgelopen dagen erbij, zodat je
   omzet van gisteren alsnog kunt invullen.
 - **+ Nieuwe afspraak**: kies een bestaande klant of maak er direct een nieuwe
@@ -65,11 +70,11 @@ WhatsApp-knop), plaats, een notitie en de afstand heen en terug in kilometers.
 
 **Overzicht**
 
-Kies een maand en zie de winst, de omzet, de kosten en wat er nog te ontvangen
-is, plus cash, bank, gestort, het aantal afspraken en de kilometers en uren uit
-de afgesloten dagen. Winst is alle omzet van die maand min de kosten — dus
-inclusief afspraken die nog niet betaald zijn; *nog te ontvangen* staat er los
-naast.
+Kies een maand en zie drie getallen: groot de **winst**, daaronder **omzet** en
+**kosten**. Winst is alle omzet van die maand min de kosten — dus inclusief
+afspraken die nog niet betaald zijn. Achter **Details** staan het openstaande
+bedrag, cash, bank, gestort, het aantal afspraken, de producten en de
+kilometers en uren uit de afgesloten dagen.
 
 Onder de cijfers beheer je twee lijsten:
 
@@ -82,10 +87,9 @@ Onder de cijfers beheer je twee lijsten:
 
 Een korte lijst van de dagen die nog op een afsluiting wachten, met per dag de
 omzet, het aantal afspraken, de kilometers en uren en een waarschuwing als er
-nog een afspraak zonder omzet tussen zit. Tik op een dag en je ziet wat die
-heeft opgeleverd: de omzet, gesplitst naar cash,
-bank en nog openstaand, het aantal afspraken, de gereden kilometers en de
-gewerkte uren. Die laatste twee worden berekend uit de afspraken van die dag —
+nog een afspraak zonder omzet tussen zit. Tik op een dag en je ziet de omzet en
+wat er nog te ontvangen is (cash, bank en producten achter *Details*), plus de
+gereden kilometers en de gewerkte uren. Die laatste twee worden berekend uit de afspraken van die dag —
 kilometers uit de vaste afstand per klant (dezelfde klant twee keer op een dag
 telt als één rit), uren uit de duur van de afspraken — en blijven corrigeerbaar
 voor je de dag vastzet. Staat er nog een afspraak zonder omzet, dan tik je die

@@ -40,7 +40,7 @@ import {
   dagKort,
   dagLabel,
   datumVan,
-  duurLabel,
+  duurKort,
   euro,
   naarCent,
   naarISODatum,
@@ -159,43 +159,57 @@ function kaart(afspraak) {
   const naam = klant ? klant.naam : "Onbekende klant";
   const isVerleden = datumVan(afspraak.start) < vandaagISO();
 
+  // Alles wat geen naam of tijd is, gaat samen op één grijze regel.
+  const onder = [
+    afspraak.behandeling,
+    afspraak.locatie,
+    duurKort(afspraak.duurMin),
+    omzetKort(afspraak.omzet),
+    afspraak.verplaatstVan ? "verplaatst" : "",
+  ].filter(Boolean);
+
   return `
     <li class="kaart kaart--afspraak kaart--klikbaar ${isVerleden ? "kaart--verleden" : ""}"
         data-afspraak="${afspraak.id}" tabindex="0" role="button"
         aria-label="Afspraak met ${veilig(naam)} openen">
-      <div class="kaart__kop">
-        <div>
-          <h3>${veilig(naam)}</h3>
-          ${afspraak.behandeling ? `<p class="kaart__behandeling">${veilig(afspraak.behandeling)}</p>` : ""}
-        </div>
-        <span class="tijd">
-          <strong>${tijdVan(afspraak.start)}</strong>
-          <small>${veilig(duurLabel(afspraak.duurMin))}</small>
-        </span>
+      <span class="stip ${stipKlasse(afspraak.omzet)}" title="${veilig(omzetTitel(afspraak.omzet))}"
+            role="img" aria-label="${veilig(omzetTitel(afspraak.omzet))}"></span>
+      <div class="kaart__hoofd">
+        <p class="kaart__titel"><strong>${tijdVan(afspraak.start)}</strong> ${veilig(naam)}</p>
+        <p class="kaart__sub">${veilig(onder.join(" · "))}</p>
       </div>
-
-      ${afspraak.locatie ? `<p class="kaart__regel"><span aria-hidden="true">📍</span> ${veilig(afspraak.locatie)}</p>` : ""}
-      ${klant?.telefoon ? whatsappKnop(klant) : ""}
-
-      <p class="badges">
-        ${omzetBadge(afspraak.omzet)}
-        ${
-          afspraak.verplaatstVan
-            ? `<span class="badge badge--info" title="Stond eerder op ${veilig(dagLabel(datumVan(afspraak.verplaatstVan)))} ${tijdVan(afspraak.verplaatstVan)}">Verplaatst</span>`
-            : ""
-        }
-      </p>
+      ${klant?.telefoon ? whatsappKnop(klant, { alleenIcoon: true }) : ""}
     </li>
   `;
 }
 
+/** Kleur van de statusstip: grijs, oranje of groen. */
+function stipKlasse(omzet) {
+  if (!omzet) return "stip--geen";
+  return omzet.betaald ? "stip--betaald" : "stip--open";
+}
+
+function omzetTitel(omzet) {
+  if (!omzet) return "Nog geen omzet";
+  return omzet.betaald
+    ? `Betaald via ${omzet.methode === "cash" ? "cash" : "bank"}`
+    : "Nog niet betaald";
+}
+
+/** "€ 74,45 cash" of "€ 82,50 open" — kort genoeg voor de grijze regel. */
+function omzetKort(omzet) {
+  if (!omzet) return "";
+  const bedrag = euro(omzetTotaal(omzet));
+  return omzet.betaald ? `${bedrag} ${omzet.methode === "cash" ? "cash" : "bank"}` : `${bedrag} open`;
+}
+
 /** Groene WhatsApp-knop die de chat met een leeg bericht opent. */
-export function whatsappKnop(klant) {
+export function whatsappKnop(klant, { alleenIcoon = false } = {}) {
   return `
-    <a class="wa" href="${whatsappHref(klant.telefoon)}" target="_blank" rel="noopener"
-       aria-label="WhatsApp ${veilig(klant.naam)}">
+    <a class="wa ${alleenIcoon ? "wa--rond" : ""}" href="${whatsappHref(klant.telefoon)}"
+       target="_blank" rel="noopener" aria-label="WhatsApp ${veilig(klant.naam)}">
       ${WA_ICOON}
-      <span>${veilig(klant.telefoon)}</span>
+      ${alleenIcoon ? "" : `<span>${veilig(klant.telefoon)}</span>`}
     </a>
   `;
 }
@@ -207,21 +221,9 @@ const WA_ICOON = `
   </svg>
 `;
 
-export function omzetBadge(omzet) {
-  if (!omzet) {
-    return `<span class="badge badge--neutraal">Omzet nog niet geregistreerd</span>`;
-  }
-  const totaal = euro(omzetTotaal(omzet));
-  const aantal = (omzet.producten || []).length;
-  const producten = aantal
-    ? `<span class="badge badge--info" title="${aantal === 1 ? "1 product" : `${aantal} producten`} voor ${euro(productenTotaal(omzet))}">
-         + ${euro(productenTotaal(omzet))} product${aantal === 1 ? "" : "en"}
-       </span>`
-    : "";
-  const hoofd = omzet.betaald
-    ? `<span class="badge badge--ok">${totaal} — betaald (${omzet.methode === "cash" ? "cash" : "bank"})</span>`
-    : `<span class="badge badge--open">${totaal} — niet betaald</span>`;
-  return hoofd + producten;
+/** Statusstip met een korte tekst, voor compacte rijen. */
+export function omzetRegel(omzet) {
+  return `<span class="stip ${stipKlasse(omzet)}"></span> ${veilig(omzetKort(omzet) || "geen omzet")}`;
 }
 
 /**
@@ -372,8 +374,14 @@ export function openAfspraakDetail(afspraakId) {
 
   const klant = getKlant(afspraak.klantId);
   const betalingRij = document.getElementById("detail-betaling");
-  const vervolgAan = document.getElementById("detail-vervolg");
-  const vervolgVelden = document.getElementById("detail-vervolg-velden");
+  const sectieVervolg = document.getElementById("detail-sectie-vervolg");
+  const sectieProducten = document.getElementById("detail-sectie-producten");
+  const sectieNotities = document.getElementById("detail-sectie-notities");
+
+  // Elke sectie begint dicht; wat gevuld is, staat in de samenvatting.
+  [sectieProducten, sectieNotities, sectieVervolg].forEach((el) => {
+    el.open = false;
+  });
 
   document.getElementById("detail-titel").textContent = klant ? klant.naam : "Afspraak";
   document.getElementById("detail-context").textContent = [
@@ -390,6 +398,15 @@ export function openAfspraakDetail(afspraakId) {
   // --- notities: deze afspraak, de klant, en wat er vorige keren stond
   form.notitie.value = afspraak.notitie || "";
   form.klantnotitie.value = klant?.notitie || "";
+
+  const notitieTel = document.getElementById("detail-notities-tel");
+  const werkNotitieTelBij = () => {
+    const aantal = [form.notitie.value.trim(), form.klantnotitie.value.trim()].filter(Boolean).length;
+    notitieTel.textContent = aantal ? "•" : "";
+  };
+  form.notitie.oninput = werkNotitieTelBij;
+  form.klantnotitie.oninput = werkNotitieTelBij;
+  werkNotitieTelBij();
 
   const vorige = vorigeNotities(afspraak.klantId, afspraak.start);
   const vorigeVeld = document.getElementById("detail-vorige-veld");
@@ -411,7 +428,7 @@ export function openAfspraakDetail(afspraakId) {
   const productenLijst = document.getElementById("detail-producten");
   const productNaam = document.getElementById("detail-product-naam");
   const productBedrag = document.getElementById("detail-product-bedrag");
-  const totaalHint = document.getElementById("detail-totaal");
+  const productenTel = document.getElementById("detail-producten-tel");
 
   const tekenProducten = () => {
     productenLijst.innerHTML = producten.length
@@ -437,11 +454,8 @@ export function openAfspraakDetail(afspraakId) {
   };
 
   const werkTotaalBij = () => {
-    const behandeling = naarCent(form.bedrag.value) || 0;
-    const productenSom = producten.reduce((som, p) => som + p.bedragCent, 0);
-    totaalHint.textContent = productenSom
-      ? `Totaal: ${euro(behandeling + productenSom)} (behandeling ${euro(behandeling)} + producten ${euro(productenSom)})`
-      : "";
+    const som = producten.reduce((totaal, p) => totaal + p.bedragCent, 0);
+    productenTel.textContent = som ? `${producten.length} · ${euro(som)}` : "";
   };
 
   const voegProductToe = () => {
@@ -493,9 +507,8 @@ export function openAfspraakDetail(afspraakId) {
   tekenProducten();
 
   // --- vervolgafspraak: dezelfde tijdkiezer als bij een nieuwe afspraak
-  vervolgAan.checked = false;
-  vervolgVelden.hidden = true;
   form.duurMin.value = String(afspraak.duurMin || 60);
+  const vervolgTel = document.getElementById("detail-vervolg-tel");
 
   // Standaard zes weken later op dezelfde tijd; dat is het meest gekozen ritme.
   const weekLater = (weken) => {
@@ -514,17 +527,24 @@ export function openAfspraakDetail(afspraakId) {
       k.classList.toggle("slot--actief", Number(k.dataset.weken) === weken),
     );
   };
+  const werkVervolgTelBij = () => {
+    vervolgTel.textContent =
+      sectieVervolg.open && vervolgKiezer
+        ? `${dagKort(vervolgKiezer.datum)} ${vervolgKiezer.tijd}`
+        : "";
+  };
   wekenRij.querySelectorAll("[data-weken]").forEach((knop) =>
     knop.addEventListener("click", () => {
       const weken = Number(knop.dataset.weken);
       markeerWeek(weken);
       vervolgKiezer?.zet({ datum: weekLater(weken) });
+      werkVervolgTelBij();
     }),
   );
 
-  vervolgAan.onchange = () => {
-    vervolgVelden.hidden = !vervolgAan.checked;
-    if (!vervolgAan.checked || vervolgKiezer) return;
+  sectieVervolg.ontoggle = () => {
+    werkVervolgTelBij();
+    if (!sectieVervolg.open || vervolgKiezer) return;
     markeerWeek(6);
     const vervolgDatum = weekLater(6);
     const eigenTijd = tijdVan(afspraak.start);
@@ -536,8 +556,12 @@ export function openAfspraakDetail(afspraakId) {
           : eersteVrijeTijd(vervolgDatum, Number(form.duurMin.value)) || eigenTijd,
       duurMin: Number(form.duurMin.value),
       // Een zelf gekozen dag hoort niet meer bij een weekknopje.
-      onWijzig: () => markeerWeek(null),
+      onWijzig: () => {
+        markeerWeek(null);
+        werkVervolgTelBij();
+      },
     });
+    werkVervolgTelBij();
   };
   form.duurMin.onchange = () => vervolgKiezer?.zet({ duurMin: Number(form.duurMin.value) });
 
@@ -580,7 +604,7 @@ export function openAfspraakDetail(afspraakId) {
       );
     }
 
-    if (vervolgAan.checked && vervolgKiezer) {
+    if (sectieVervolg.open && vervolgKiezer) {
       const sleutel = `${vervolgKiezer.datum}T${vervolgKiezer.tijd}-${form.duurMin.value}`;
       const botsing = overlapMet({
         datum: vervolgKiezer.datum,

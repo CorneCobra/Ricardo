@@ -56,16 +56,14 @@
       <div class="veld">
         <label for="klant-plaats">Plaats</label>
         <input id="klant-plaats" name="plaats" type="text" placeholder="Apeldoorn" />
-        <p class="hint">Wordt overgenomen als locatie van de afspraak.</p>
       </div>
       <div class="veld">
-        <label for="klant-afstand">Afstand heen en terug (km)</label>
+        <label for="klant-afstand">Afstand retour (km)</label>
         <input id="klant-afstand" name="afstandKm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="12" />
-        <p class="hint">Wordt gebruikt om je dagkilometers automatisch voor te stellen.</p>
       </div>
       <div class="veld">
         <label for="klant-notitie">Notitie</label>
-        <textarea id="klant-notitie" name="notitie" rows="2" placeholder="Bijv. haarkleur, voorkeuren"></textarea>
+        <textarea id="klant-notitie" name="notitie" rows="2"></textarea>
       </div>
 
       <p class="dlg__fout" data-fout hidden></p>
@@ -124,7 +122,6 @@
           <input id="afspraak-locatie" name="locatie" type="text" placeholder="Plaats" />
           <button type="button" class="knop knop--stil knop--klein" id="afspraak-salon">Salon</button>
         </div>
-        <p class="hint">Wordt automatisch gevuld met de plaats van de klant.</p>
       </div>
 
       <p class="dlg__fout" data-fout hidden></p>
@@ -172,8 +169,8 @@
       </div>
 
       <div class="veld">
-        <label for="kosten-omschrijving">Waarvoor?</label>
-        <input id="kosten-omschrijving" name="omschrijving" type="text" list="kostensoorten" placeholder="Kleurmiddelen" required />
+        <label for="kosten-omschrijving">Waarvoor</label>
+        <input id="kosten-omschrijving" name="omschrijving" type="text" list="kostensoorten" required />
         <datalist id="kostensoorten">
           <option value="Haarproducten"></option>
           <option value="Kleurmiddelen"></option>
@@ -188,7 +185,7 @@
       <div class="veld">
         <label for="kosten-bon">Bon</label>
         <input id="kosten-bon" name="bon" type="file" accept="image/*,application/pdf" capture="environment" />
-        <p class="hint">Foto of PDF. Blijft voorlopig in dit venster; later gaat de bon naar Google Drive.</p>
+        <p class="hint">Blijft in dit venster staan.</p>
         <div id="kosten-bon-preview" class="bon" hidden></div>
       </div>
 
@@ -232,84 +229,68 @@
       <p class="dlg__context" id="detail-context"></p>
       <p id="detail-contact" class="detail__contact"></p>
 
-      <section class="blokje">
-        <h3>Omzet &amp; betaling</h3>
-        <div class="veld">
-          <label for="detail-bedrag">Bedrag</label>
-          <div class="veld__valuta">
+      <div class="veld">
+        <label for="detail-bedrag">Bedrag</label>
+        <div class="veld__valuta">
+          <span aria-hidden="true">€</span>
+          <input id="detail-bedrag" name="bedrag" type="text" inputmode="decimal" placeholder="45,00" />
+        </div>
+      </div>
+
+      <div class="veld">
+        <span class="veld__kop" id="detail-betaling-kop">Betaling</span>
+        <div class="keuzerij" id="detail-betaling" role="radiogroup" aria-labelledby="detail-betaling-kop">
+          <button type="button" class="keuzeknop" data-betaling="open" role="radio" aria-checked="true">Nog niet</button>
+          <button type="button" class="keuzeknop" data-betaling="cash" role="radio" aria-checked="false">Cash</button>
+          <button type="button" class="keuzeknop" data-betaling="bank" role="radio" aria-checked="false">Bank</button>
+        </div>
+      </div>
+
+      <details class="sectie" id="detail-sectie-producten">
+        <summary>Producten <span class="sectie__tel" id="detail-producten-tel"></span></summary>
+        <ul class="producten" id="detail-producten"></ul>
+        <div class="veld__rij">
+          <input id="detail-product-naam" type="text" placeholder="Shampoo" aria-label="Product" />
+          <div class="veld__valuta veld__valuta--smal">
             <span aria-hidden="true">€</span>
-            <input id="detail-bedrag" name="bedrag" type="text" inputmode="decimal" placeholder="45,00" />
+            <input id="detail-product-bedrag" type="text" inputmode="decimal" placeholder="14,95" aria-label="Bedrag product" />
           </div>
+          <button type="button" class="knop knop--stil knop--klein" id="detail-product-toevoegen">+</button>
         </div>
-        <div class="veld">
-          <span class="veld__kop">Verkochte producten</span>
-          <ul class="producten" id="detail-producten"></ul>
-          <div class="veld__rij">
-            <input id="detail-product-naam" type="text" placeholder="Shampoo krullen" aria-label="Product" />
-            <div class="veld__valuta veld__valuta--smal">
-              <span aria-hidden="true">€</span>
-              <input id="detail-product-bedrag" type="text" inputmode="decimal" placeholder="14,95" aria-label="Bedrag product" />
-            </div>
-            <button type="button" class="knop knop--stil knop--klein" id="detail-product-toevoegen">+</button>
-          </div>
-          <p class="hint" id="detail-totaal"></p>
-        </div>
+      </details>
 
-        <div class="veld">
-          <span class="veld__kop" id="detail-betaling-kop">Betaling</span>
-          <div class="keuzerij" id="detail-betaling" role="radiogroup" aria-labelledby="detail-betaling-kop">
-            <button type="button" class="keuzeknop" data-betaling="open" role="radio" aria-checked="true">Nog niet</button>
-            <button type="button" class="keuzeknop" data-betaling="cash" role="radio" aria-checked="false">💶 Cash</button>
-            <button type="button" class="keuzeknop" data-betaling="bank" role="radio" aria-checked="false">🏦 Bank</button>
-          </div>
-        </div>
-      </section>
-
-      <section class="blokje">
-        <h3>Notities</h3>
+      <details class="sectie" id="detail-sectie-notities">
+        <summary>Notities <span class="sectie__tel" id="detail-notities-tel"></span></summary>
         <div class="veld">
           <label for="detail-notitie">Deze afspraak</label>
-          <textarea id="detail-notitie" name="notitie" rows="2" placeholder="Bijv. kleurformule, wat er geknipt is"></textarea>
+          <textarea id="detail-notitie" name="notitie" rows="2"></textarea>
         </div>
         <div class="veld">
           <label for="detail-klantnotitie">Over de klant</label>
-          <textarea id="detail-klantnotitie" name="klantnotitie" rows="2" placeholder="Bijv. haarkleur, allergie, voorkeuren"></textarea>
-          <p class="hint">Blijft staan bij elke afspraak van deze klant.</p>
+          <textarea id="detail-klantnotitie" name="klantnotitie" rows="2"></textarea>
         </div>
         <div class="veld" id="detail-vorige-veld" hidden>
           <span class="veld__kop">Vorige keren</span>
           <div id="detail-vorige"></div>
         </div>
-      </section>
+      </details>
 
-      <section class="blokje">
-        <h3>Vervolgafspraak</h3>
-        <label class="schakel">
-          <input id="detail-vervolg" type="checkbox" />
-          <span>Nu een vervolgafspraak plannen</span>
-        </label>
-
-        <div id="detail-vervolg-velden" hidden>
-          <div class="slots">
-            <span class="slots__kop">Over hoeveel weken?</span>
-            <div class="slots__rij" id="detail-weken"></div>
-          </div>
-
-          <div class="veld">
-            <label for="detail-duur">Duur</label>
-            <select id="detail-duur" name="duurMin">
-              <option value="30">30 minuten</option>
-              <option value="45">45 minuten</option>
-              <option value="60">1 uur</option>
-              <option value="90">1,5 uur</option>
-              <option value="120">2 uur</option>
-              <option value="180">3 uur</option>
-            </select>
-          </div>
-
-          <div id="detail-tijdkiezer"></div>
+      <details class="sectie" id="detail-sectie-vervolg">
+        <summary>Vervolgafspraak <span class="sectie__tel" id="detail-vervolg-tel"></span></summary>
+        <div class="slots__rij" id="detail-weken"></div>
+        <div class="veld">
+          <label for="detail-duur">Duur</label>
+          <select id="detail-duur" name="duurMin">
+            <option value="30">30 minuten</option>
+            <option value="45">45 minuten</option>
+            <option value="60">1 uur</option>
+            <option value="90">1,5 uur</option>
+            <option value="120">2 uur</option>
+            <option value="180">3 uur</option>
+          </select>
         </div>
-      </section>
+        <div id="detail-tijdkiezer"></div>
+      </details>
 
       <p class="dlg__fout" data-fout hidden></p>
 
@@ -342,7 +323,6 @@
           <input id="dag-uren" name="uren" type="number" inputmode="decimal" min="0" step="0.25" />
         </div>
       </div>
-      <p class="hint">Berekend uit deze dag — pas aan als je extra hebt gereden of gewerkt.</p>
 
       <p class="dlg__fout" data-fout hidden></p>
       <div class="dlg__acties">
