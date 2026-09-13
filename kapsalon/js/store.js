@@ -228,23 +228,18 @@ export function overlapMet({ datum, tijd, duurMin, negeerId = null }) {
 }
 
 /**
- * Vrije starttijden op een dag waar een afspraak van duurMin minuten past.
- * Loopt het dagvenster af in stappen van een kwartier.
+ * De eerste starttijd op een dag waar een afspraak van duurMin minuten past.
+ * Wordt gebruikt als voorstel, zodat een nieuwe afspraak niet standaard op
+ * een bezet moment begint. Geeft null als de dag helemaal vol zit.
  */
-export function vrijeSlots(datum, duurMin, { negeerId = null, maximaal = 6 } = {}) {
+export function eersteVrijeTijd(datum, duurMin, { vanaf = DAG_START, negeerId = null } = {}) {
   const duur = Number(duurMin) || 60;
-  const slots = [];
-  for (let m = DAG_START; m + duur <= DAG_EINDE; m += 15) {
+  const start = Math.max(DAG_START, Math.ceil(vanaf / 15) * 15);
+  for (let m = start; m + duur <= DAG_EINDE; m += 15) {
     const tijd = tijdVanMinuten(m);
-    if (overlapMet({ datum, tijd, duurMin: duur, negeerId }).length === 0) {
-      slots.push(tijd);
-    }
+    if (overlapMet({ datum, tijd, duurMin: duur, negeerId }).length === 0) return tijd;
   }
-  if (slots.length <= maximaal) return slots;
-
-  // Spreid de suggesties over de dag in plaats van zes keer hetzelfde uur.
-  const stap = Math.ceil(slots.length / maximaal);
-  return slots.filter((_, i) => i % stap === 0).slice(0, maximaal);
+  return null;
 }
 
 /* ------------------------------------------------------------- stortingen */

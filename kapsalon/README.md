@@ -35,8 +35,7 @@ vrije plek en de nieuwe-afspraakdialoog staat meteen op dat kwartier.
   bij elke afspraak blijft staan, en daaronder wat je de vorige keren hebt
   opgeschreven.
 - **Vervolgafspraak** — meteen inplannen met knopjes voor 1 tot 12 weken
-  later; datum en tijd zijn daarna nog aan te passen, inclusief controle op
-  overlap.
+  later, en daarna prikken in dezelfde tijdkiezer als bij een nieuwe afspraak.
 - Onderin **Verplaatsen** en **Verwijderen**.
 
 Verder in beide weergaven:
@@ -51,10 +50,13 @@ Verder in beide weergaven:
 - **+ Nieuwe afspraak**: kies een bestaande klant of maak er direct een nieuwe
   aan. De plaats van de klant wordt automatisch overgenomen als locatie; met de
   knop *Salon* zet je de afspraak in de salon.
-- **Botst het?** Bij inplannen en verplaatsen zie je welke afspraken al op die
-  dag staan, krijg je knopjes met vrije tijdstippen, en volgt er een
-  waarschuwing als je over een bestaande afspraak heen plant. Je kunt die
-  waarschuwing negeren door nog een keer op Opslaan te klikken.
+- **De tijdkiezer.** Inplannen, een vervolgafspraak maken en verplaatsen
+  gebruiken allemaal hetzelfde blokje: een weekstrip met stipjes voor drukke
+  dagen, en daaronder de agenda van de gekozen dag. Wat al bezet is staat grijs,
+  jouw nieuwe afspraak staat er als gekleurd blok in; tik in de agenda om een
+  kwartier op te schuiven of gebruik het tijdveld. Overlapt het, dan kleurt het
+  blok rood en zegt de regel eronder met wie. Je kunt het toch doorzetten door
+  nog een keer op Opslaan te klikken.
 
 **Klanten**
 

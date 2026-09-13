@@ -88,22 +88,6 @@
           <button type="button" class="knop knop--stil knop--klein" id="afspraak-nieuwe-klant">+ Nieuw</button>
         </div>
       </div>
-      <div class="veld veld--duo">
-        <div>
-          <label for="afspraak-datum">Datum</label>
-          <input id="afspraak-datum" name="datum" type="date" required />
-        </div>
-        <div>
-          <label for="afspraak-tijd">Tijd</label>
-          <input id="afspraak-tijd" name="tijd" type="time" step="300" required />
-        </div>
-      </div>
-      <p class="hint" id="afspraak-dagoverzicht"></p>
-      <div class="slots" id="afspraak-slots" hidden>
-        <span class="slots__kop">Vrij op deze dag:</span>
-        <div class="slots__rij" id="afspraak-slots-rij"></div>
-      </div>
-
       <div class="veld">
         <label for="afspraak-duur">Duur</label>
         <select id="afspraak-duur" name="duurMin">
@@ -115,6 +99,11 @@
           <option value="180">3 uur</option>
         </select>
       </div>
+      <div class="veld">
+        <span class="veld__kop">Wanneer?</span>
+        <div id="afspraak-tijdkiezer"></div>
+      </div>
+
       <div class="veld">
         <label for="afspraak-behandeling">Behandeling</label>
         <input id="afspraak-behandeling" name="behandeling" type="text" list="behandelingen" placeholder="Knippen + föhnen" />
@@ -152,23 +141,8 @@
       <h2>Afspraak verplaatsen</h2>
       <p class="dlg__context" id="verplaats-context"></p>
 
-      <div class="veld veld--duo">
-        <div>
-          <label for="verplaats-datum">Nieuwe datum</label>
-          <input id="verplaats-datum" name="datum" type="date" required />
-        </div>
-        <div>
-          <label for="verplaats-tijd">Nieuwe tijd</label>
-          <input id="verplaats-tijd" name="tijd" type="time" step="300" required />
-        </div>
-      </div>
-
+      <div id="verplaats-tijdkiezer"></div>
       <p class="waarschuwing waarschuwing--klein" id="verplaats-gevolgen" hidden></p>
-      <p class="hint" id="verplaats-dagoverzicht"></p>
-      <div class="slots" id="verplaats-slots" hidden>
-        <span class="slots__kop">Vrij op deze dag:</span>
-        <div class="slots__rij" id="verplaats-slots-rij"></div>
-      </div>
 
       <p class="dlg__fout" data-fout hidden></p>
       <div class="dlg__acties">
@@ -321,17 +295,6 @@
             <div class="slots__rij" id="detail-weken"></div>
           </div>
 
-          <div class="veld veld--duo">
-            <div>
-              <label for="detail-datum">Datum</label>
-              <input id="detail-datum" name="datum" type="date" />
-            </div>
-            <div>
-              <label for="detail-tijd">Tijd</label>
-              <input id="detail-tijd" name="tijd" type="time" step="300" />
-            </div>
-          </div>
-
           <div class="veld">
             <label for="detail-duur">Duur</label>
             <select id="detail-duur" name="duurMin">
@@ -344,11 +307,7 @@
             </select>
           </div>
 
-          <p class="hint" id="detail-dagoverzicht"></p>
-          <div class="slots" id="detail-slots" hidden>
-            <span class="slots__kop">Vrij op die dag:</span>
-            <div class="slots__rij" id="detail-slots-rij"></div>
-          </div>
+          <div id="detail-tijdkiezer"></div>
         </div>
       </section>
 
