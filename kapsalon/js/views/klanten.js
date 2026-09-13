@@ -35,7 +35,6 @@ export function render(root) {
 }
 
 function kaart(klant) {
-  const plaats = [klant.adres, klant.plaats].filter(Boolean).join(", ");
   return `
     <li class="kaart">
       <div class="kaart__kop">
@@ -46,7 +45,7 @@ function kaart(klant) {
         <span aria-hidden="true">📞</span>
         <a href="${telHref(klant.telefoon)}">${veilig(klant.telefoon)}</a>
       </p>
-      ${plaats ? `<p class="kaart__regel"><span aria-hidden="true">📍</span> ${veilig(plaats)}</p>` : ""}
+      ${klant.plaats ? `<p class="kaart__regel"><span aria-hidden="true">📍</span> ${veilig(klant.plaats)}</p>` : ""}
       <p class="kaart__regel kaart__regel--stil">
         <span aria-hidden="true">🚗</span> ${getal(klant.afstandKm)} km heen en terug
       </p>
@@ -70,7 +69,6 @@ export function openKlantDialoog({ klantId = null, onOpgeslagen } = {}) {
     : "Nieuwe klant";
   form.naam.value = klant?.naam || "";
   form.telefoon.value = klant?.telefoon || "";
-  form.adres.value = klant?.adres || "";
   form.plaats.value = klant?.plaats || "";
   form.afstandKm.value = klant ? klant.afstandKm : "";
   form.notitie.value = klant?.notitie || "";
@@ -80,7 +78,6 @@ export function openKlantDialoog({ klantId = null, onOpgeslagen } = {}) {
     const velden = {
       naam: form.naam.value.trim(),
       telefoon: form.telefoon.value.trim(),
-      adres: form.adres.value.trim(),
       plaats: form.plaats.value.trim(),
       afstandKm: Number(form.afstandKm.value) || 0,
       notitie: form.notitie.value.trim(),
