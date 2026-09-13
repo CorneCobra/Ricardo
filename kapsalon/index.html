@@ -28,11 +28,12 @@
       <button type="button" class="tab" data-tab="klanten">
         <span class="tab__icon" aria-hidden="true">👤</span><span>Klanten</span>
       </button>
-      <button type="button" class="tab" data-tab="stortingen">
-        <span class="tab__icon" aria-hidden="true">🏦</span><span>Storting</span>
-      </button>
+
       <button type="button" class="tab" data-tab="afsluiting">
         <span class="tab__icon" aria-hidden="true">✅</span><span>Afsluiten</span>
+      </button>
+      <button type="button" class="tab" data-tab="overzicht">
+        <span class="tab__icon" aria-hidden="true">📊</span><span>Overzicht</span>
       </button>
     </nav>
   </div>
@@ -41,7 +42,7 @@
 
   <!-- Dialoog: nieuwe klant / klant bewerken -->
   <dialog id="dlg-klant" class="dlg">
-    <form id="form-klant" class="dlg__form">
+    <form id="form-klant" class="dlg__form" novalidate>
       <h2 id="dlg-klant-titel">Nieuwe klant</h2>
 
       <div class="veld">
@@ -77,7 +78,7 @@
 
   <!-- Dialoog: nieuwe afspraak / afspraak bewerken -->
   <dialog id="dlg-afspraak" class="dlg">
-    <form id="form-afspraak" class="dlg__form">
+    <form id="form-afspraak" class="dlg__form" novalidate>
       <h2 id="dlg-afspraak-titel">Nieuwe afspraak</h2>
 
       <div class="veld">
@@ -147,7 +148,7 @@
 
   <!-- Dialoog: omzet registreren -->
   <dialog id="dlg-omzet" class="dlg">
-    <form id="form-omzet" class="dlg__form">
+    <form id="form-omzet" class="dlg__form" novalidate>
       <h2>Omzet registreren</h2>
       <p class="dlg__context" id="omzet-context"></p>
 
@@ -180,7 +181,7 @@
 
   <!-- Dialoog: afspraak verplaatsen -->
   <dialog id="dlg-verplaats" class="dlg">
-    <form id="form-verplaats" class="dlg__form">
+    <form id="form-verplaats" class="dlg__form" novalidate>
       <h2>Afspraak verplaatsen</h2>
       <p class="dlg__context" id="verplaats-context"></p>
 
@@ -205,6 +206,79 @@
       <div class="dlg__acties">
         <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
         <button type="submit" class="knop">Verplaatsen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialoog: kostenpost toevoegen -->
+  <dialog id="dlg-kosten" class="dlg">
+    <form id="form-kosten" class="dlg__form" novalidate>
+      <h2>Kosten toevoegen</h2>
+
+      <div class="veld veld--duo">
+        <div>
+          <label for="kosten-bedrag">Bedrag</label>
+          <div class="veld__valuta">
+            <span aria-hidden="true">€</span>
+            <input id="kosten-bedrag" name="bedrag" type="text" inputmode="decimal" placeholder="89,95" required />
+          </div>
+        </div>
+        <div>
+          <label for="kosten-datum">Datum</label>
+          <input id="kosten-datum" name="datum" type="date" required />
+        </div>
+      </div>
+
+      <div class="veld">
+        <label for="kosten-omschrijving">Waarvoor?</label>
+        <input id="kosten-omschrijving" name="omschrijving" type="text" list="kostensoorten" placeholder="Kleurmiddelen" required />
+        <datalist id="kostensoorten">
+          <option value="Haarproducten"></option>
+          <option value="Kleurmiddelen"></option>
+          <option value="Benzine"></option>
+          <option value="Parkeren"></option>
+          <option value="Gereedschap"></option>
+          <option value="Telefoonabonnement"></option>
+          <option value="Verzekering"></option>
+        </datalist>
+      </div>
+
+      <div class="veld">
+        <label for="kosten-bon">Bon</label>
+        <input id="kosten-bon" name="bon" type="file" accept="image/*,application/pdf" capture="environment" />
+        <p class="hint">Foto of PDF. Blijft voorlopig in dit venster; later gaat de bon naar Google Drive.</p>
+        <div id="kosten-bon-preview" class="bon" hidden></div>
+      </div>
+
+      <p class="dlg__fout" data-fout hidden></p>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
+        <button type="submit" class="knop">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialoog: omzetstorting -->
+  <dialog id="dlg-storting" class="dlg">
+    <form id="form-storting" class="dlg__form" novalidate>
+      <h2>Omzetstorting</h2>
+      <div class="veld veld--duo">
+        <div>
+          <label for="storting-bedrag">Bedrag</label>
+          <div class="veld__valuta">
+            <span aria-hidden="true">€</span>
+            <input id="storting-bedrag" name="bedrag" type="text" inputmode="decimal" placeholder="120,00" required />
+          </div>
+        </div>
+        <div>
+          <label for="storting-datum">Datum</label>
+          <input id="storting-datum" name="datum" type="date" required />
+        </div>
+      </div>
+      <p class="dlg__fout" data-fout hidden></p>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
+        <button type="submit" class="knop">Opslaan</button>
       </div>
     </form>
   </dialog>

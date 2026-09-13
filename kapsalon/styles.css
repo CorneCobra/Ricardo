@@ -309,6 +309,7 @@ label, legend {
 input[type="text"],
 input[type="tel"],
 input[type="date"],
+input[type="month"],
 input[type="time"],
 input[type="number"],
 select,
@@ -480,7 +481,8 @@ textarea { min-height: 66px; resize: vertical; }
 
 .dagkiezer__midden strong { font-size: 1.05rem; }
 
-.dagkiezer__midden input[type="date"] {
+.dagkiezer__midden input[type="date"],
+.dagkiezer__midden input[type="month"] {
   width: auto;
   min-height: 36px;
   padding: 0.2rem 0.4rem;
@@ -619,6 +621,57 @@ textarea { min-height: 66px; resize: vertical; }
 }
 
 .acties__knoppen { display: grid; gap: 0.5rem; }
+
+/* ----------------------------------------------------------------- bon */
+
+.kop--sectie {
+  margin-top: 1.5rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.kop--sectie h3 { font-size: 1.05rem; }
+
+.bon {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 0.85rem;
+}
+
+.bon img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.bon__chip {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.8rem;
+  color: var(--accent-dark);
+  text-decoration: none;
+  word-break: break-word;
+}
+
+a.bon__chip:hover { text-decoration: underline; }
+
+input[type="file"] {
+  font: inherit;
+  font-size: 0.85rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.cijfer--negatief strong { color: var(--gevaar); }
 
 /* ------------------------------------------------------------- tabbalk */
 
