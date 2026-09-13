@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Hair by Simone — afspraken</title>
+  <meta name="description" content="Afspraken, omzet, stortingen en kilometers voor kapsalon Hair by Simone." />
+  <meta name="theme-color" content="#8c4363" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💇</text></svg>" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div>
+        <h1>Hair by Simone</h1>
+        <p class="topbar__sub">Afspraken &amp; administratie</p>
+      </div>
+      <span class="topbar__demo" title="Alle gegevens staan alleen in dit browservenster en verdwijnen bij vernieuwen.">Demo</span>
+    </header>
+
+    <main id="view" class="view" tabindex="-1"></main>
+
+    <nav class="tabbar" aria-label="Hoofdnavigatie">
+      <button type="button" class="tab" data-tab="afspraken">
+        <span class="tab__icon" aria-hidden="true">📅</span><span>Afspraken</span>
+      </button>
+      <button type="button" class="tab" data-tab="klanten">
+        <span class="tab__icon" aria-hidden="true">👤</span><span>Klanten</span>
+      </button>
+      <button type="button" class="tab" data-tab="stortingen">
+        <span class="tab__icon" aria-hidden="true">🏦</span><span>Storting</span>
+      </button>
+      <button type="button" class="tab" data-tab="kmuren">
+        <span class="tab__icon" aria-hidden="true">🚗</span><span>Km &amp; uren</span>
+      </button>
+    </nav>
+  </div>
+
+  <p id="melding" class="melding" role="status" aria-live="polite" hidden></p>
+
+  <!-- Dialoog: nieuwe klant / klant bewerken -->
+  <dialog id="dlg-klant" class="dlg">
+    <form id="form-klant" class="dlg__form">
+      <h2 id="dlg-klant-titel">Nieuwe klant</h2>
+
+      <div class="veld">
+        <label for="klant-naam">Naam</label>
+        <input id="klant-naam" name="naam" type="text" autocomplete="name" required />
+      </div>
+      <div class="veld">
+        <label for="klant-telefoon">Telefoonnummer</label>
+        <input id="klant-telefoon" name="telefoon" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required />
+      </div>
+      <div class="veld">
+        <label for="klant-adres">Adres</label>
+        <input id="klant-adres" name="adres" type="text" placeholder="Kerkstraat 12" />
+      </div>
+      <div class="veld">
+        <label for="klant-plaats">Plaats</label>
+        <input id="klant-plaats" name="plaats" type="text" placeholder="Apeldoorn" />
+      </div>
+      <div class="veld">
+        <label for="klant-afstand">Afstand heen en terug (km)</label>
+        <input id="klant-afstand" name="afstandKm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="12" />
+        <p class="hint">Wordt gebruikt om je dagkilometers automatisch voor te stellen.</p>
+      </div>
+      <div class="veld">
+        <label for="klant-notitie">Notitie</label>
+        <textarea id="klant-notitie" name="notitie" rows="2" placeholder="Bijv. haarkleur, voorkeuren"></textarea>
+      </div>
+
+      <p class="dlg__fout" data-fout hidden></p>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
+        <button type="submit" class="knop">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialoog: nieuwe afspraak / afspraak bewerken -->
+  <dialog id="dlg-afspraak" class="dlg">
+    <form id="form-afspraak" class="dlg__form">
+      <h2 id="dlg-afspraak-titel">Nieuwe afspraak</h2>
+
+      <div class="veld">
+        <label for="afspraak-klant">Klant</label>
+        <div class="veld__rij">
+          <select id="afspraak-klant" name="klantId" required></select>
+          <button type="button" class="knop knop--stil knop--klein" id="afspraak-nieuwe-klant">+ Nieuw</button>
+        </div>
+      </div>
+      <div class="veld veld--duo">
+        <div>
+          <label for="afspraak-datum">Datum</label>
+          <input id="afspraak-datum" name="datum" type="date" required />
+        </div>
+        <div>
+          <label for="afspraak-tijd">Tijd</label>
+          <input id="afspraak-tijd" name="tijd" type="time" step="300" required />
+        </div>
+      </div>
+      <div class="veld">
+        <label for="afspraak-duur">Duur</label>
+        <select id="afspraak-duur" name="duurMin">
+          <option value="30">30 minuten</option>
+          <option value="45">45 minuten</option>
+          <option value="60" selected>1 uur</option>
+          <option value="90">1,5 uur</option>
+          <option value="120">2 uur</option>
+          <option value="180">3 uur</option>
+        </select>
+      </div>
+      <div class="veld">
+        <label for="afspraak-behandeling">Behandeling</label>
+        <input id="afspraak-behandeling" name="behandeling" type="text" list="behandelingen" placeholder="Knippen + föhnen" />
+        <datalist id="behandelingen">
+          <option value="Knippen"></option>
+          <option value="Knippen + föhnen"></option>
+          <option value="Kleuren"></option>
+          <option value="Kleuren + knippen"></option>
+          <option value="Highlights"></option>
+          <option value="Permanent"></option>
+          <option value="Watergolf"></option>
+          <option value="Föhnen"></option>
+        </datalist>
+      </div>
+      <div class="veld">
+        <label for="afspraak-locatie">Locatie</label>
+        <div class="veld__rij">
+          <input id="afspraak-locatie" name="locatie" type="text" placeholder="Adres van de klant" />
+          <button type="button" class="knop knop--stil knop--klein" id="afspraak-salon">Salon</button>
+        </div>
+        <p class="hint">Wordt automatisch gevuld met het adres van de klant.</p>
+      </div>
+
+      <p class="dlg__fout" data-fout hidden></p>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
+        <button type="submit" class="knop">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialoog: omzet registreren -->
+  <dialog id="dlg-omzet" class="dlg">
+    <form id="form-omzet" class="dlg__form">
+      <h2>Omzet registreren</h2>
+      <p class="dlg__context" id="omzet-context"></p>
+
+      <div class="veld">
+        <label for="omzet-bedrag">Bedrag</label>
+        <div class="veld__valuta">
+          <span aria-hidden="true">€</span>
+          <input id="omzet-bedrag" name="bedrag" type="text" inputmode="decimal" placeholder="45,00" required />
+        </div>
+      </div>
+
+      <label class="schakel">
+        <input id="omzet-betaald" name="betaald" type="checkbox" />
+        <span>Al betaald</span>
+      </label>
+
+      <fieldset class="veld veld--keuze" id="omzet-methode-veld" disabled>
+        <legend>Hoe betaald?</legend>
+        <label class="keuze"><input type="radio" name="methode" value="bank" /> <span>Bank</span></label>
+        <label class="keuze"><input type="radio" name="methode" value="cash" /> <span>Cash</span></label>
+      </fieldset>
+
+      <p class="dlg__fout" data-fout hidden></p>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
+        <button type="submit" class="knop">Opslaan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Dialoog: afspraak verplaatsen -->
+  <dialog id="dlg-verplaats" class="dlg">
+    <form id="form-verplaats" class="dlg__form">
+      <h2>Afspraak verplaatsen</h2>
+      <p class="dlg__context" id="verplaats-context"></p>
+
+      <div class="veld veld--duo">
+        <div>
+          <label for="verplaats-datum">Nieuwe datum</label>
+          <input id="verplaats-datum" name="datum" type="date" required />
+        </div>
+        <div>
+          <label for="verplaats-tijd">Nieuwe tijd</label>
+          <input id="verplaats-tijd" name="tijd" type="time" step="300" required />
+        </div>
+      </div>
+
+      <p class="dlg__fout" data-fout hidden></p>
+      <div class="dlg__acties">
+        <button type="button" class="knop knop--stil" data-sluiten>Annuleren</button>
+        <button type="submit" class="knop">Verplaatsen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
