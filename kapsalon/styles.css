@@ -862,6 +862,126 @@ input[type="file"] {
 
 .waarschuwing--klein { margin: 0; font-size: 0.85rem; }
 
+/* ------------------------------------------------------------ tijdkiezer */
+
+.tk { display: grid; gap: 0.5rem; }
+
+.tk__week { display: flex; align-items: center; gap: 0.25rem; }
+
+.tk__dagen {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.15rem;
+}
+
+.tk__dag {
+  appearance: none;
+  font: inherit;
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+  padding: 0.3rem 0.1rem;
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tk__dag span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.tk__dag strong { font-size: 0.95rem; color: var(--text); }
+.tk__punten { font-style: normal; font-size: 0.55rem; line-height: 1; color: var(--accent); height: 0.6rem; }
+
+.tk__dag--vandaag strong { text-decoration: underline; text-underline-offset: 2px; }
+
+.tk__dag--actief {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #fff;
+}
+.tk__dag--actief strong { color: #fff; }
+.tk__dag--actief .tk__punten { color: rgba(255, 255, 255, 0.8); }
+.tk__dag:focus-visible { outline: 3px solid var(--accent); outline-offset: 1px; }
+
+.tk__gekozen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.tk__gekozen input[type="time"] { width: auto; min-height: 40px; }
+
+.tk__agenda {
+  position: relative;
+  height: 230px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.tk__vlak { position: relative; height: var(--tk-hoogte); }
+.tk__raster { position: absolute; inset: 0; cursor: copy; }
+
+.tk__uur {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--border);
+  pointer-events: none;
+}
+
+.tk__uur span {
+  position: absolute;
+  top: 1px;
+  left: 0.35rem;
+  font-size: 0.65rem;
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.tk__bezet,
+.tk__nieuw {
+  position: absolute;
+  left: 2.8rem;
+  right: 0.4rem;
+  overflow: hidden;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  pointer-events: none;
+}
+
+.tk__bezet {
+  background: var(--neutraal-bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.tk__nieuw {
+  background: var(--accent-dark);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(140, 67, 99, 0.35);
+}
+
+.tk__nieuw--botst { background: var(--gevaar); }
+
+.tk__melding { margin: 0; font-size: 0.8rem; color: var(--muted); }
+.tk__melding--botst { color: var(--gevaar); font-weight: 600; }
+
+.slot--actief {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  color: #fff;
+}
+
 /* ------------------------------------------------------------- tabbalk */
 
 

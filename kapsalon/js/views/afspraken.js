@@ -14,6 +14,7 @@ import {
   DAG_EINDE,
   DAG_START,
   afsprakenOp,
+  eersteVrijeTijd,
   getAfgelopenAfspraken,
   getAfspraak,
   getKlant,
@@ -31,11 +32,11 @@ import {
   wijzigAfspraak,
   wijzigKlant,
   voegAfspraakToe,
-  vrijeSlots,
   zetOmzet,
 } from "../store.js";
 import { SALON } from "../data.js";
 import {
+  alsDatum,
   dagKort,
   dagLabel,
   datumVan,
@@ -52,6 +53,7 @@ import {
 } from "../format.js";
 import { melding, openDialoog, toonFout } from "../ui.js";
 import { openKlantDialoog } from "./klanten.js";
+import { maakTijdkiezer } from "./tijdkiezer.js";
 
 // Blijft bewaard zolang de app open staat, zodat weergave, filter en gekozen
 // dag niet terugspringen bij elke wijziging.
@@ -490,56 +492,54 @@ export function openAfspraakDetail(afspraakId) {
   tekenBetaling();
   tekenProducten();
 
-  // --- vervolgafspraak
+  // --- vervolgafspraak: dezelfde tijdkiezer als bij een nieuwe afspraak
   vervolgAan.checked = false;
   vervolgVelden.hidden = true;
-  form.datum.value = "";
-  form.tijd.value = tijdVan(afspraak.start);
   form.duurMin.value = String(afspraak.duurMin || 60);
 
-  const toonRuimte = () => {
-    if (!form.datum.value) {
-      document.getElementById("detail-dagoverzicht").textContent = "";
-      document.getElementById("detail-slots").hidden = true;
-      return;
-    }
-    werkRuimteBij({
-      datum: form.datum.value,
-      duurMin: Number(form.duurMin.value),
-      overzichtEl: document.getElementById("detail-dagoverzicht"),
-      slotsEl: document.getElementById("detail-slots"),
-      rijEl: document.getElementById("detail-slots-rij"),
-      kiesTijd: (gekozen) => {
-        form.tijd.value = gekozen;
-      },
-    });
+  // Standaard zes weken later op dezelfde tijd; dat is het meest gekozen ritme.
+  const weekLater = (weken) => {
+    const d = alsDatum(datumVan(afspraak.start));
+    d.setDate(d.getDate() + weken * 7);
+    return naarISODatum(d);
   };
 
-  // Weken-knopjes: zelfde dag van de week, zelfde tijd, n weken later.
+  let vervolgKiezer = null;
   const wekenRij = document.getElementById("detail-weken");
   wekenRij.innerHTML = VERVOLG_WEKEN.map(
     (w) => `<button type="button" class="slot" data-weken="${w}">${w} wk</button>`,
   ).join("");
+  const markeerWeek = (weken) => {
+    wekenRij.querySelectorAll("[data-weken]").forEach((k) =>
+      k.classList.toggle("slot--actief", Number(k.dataset.weken) === weken),
+    );
+  };
   wekenRij.querySelectorAll("[data-weken]").forEach((knop) =>
     knop.addEventListener("click", () => {
-      const d = new Date(`${datumVan(afspraak.start)}T12:00`);
-      d.setDate(d.getDate() + Number(knop.dataset.weken) * 7);
-      form.datum.value = naarISODatum(d);
-      wekenRij.querySelectorAll("[data-weken]").forEach((k) => k.classList.remove("slot--actief"));
-      knop.classList.add("slot--actief");
-      toonRuimte();
+      const weken = Number(knop.dataset.weken);
+      markeerWeek(weken);
+      vervolgKiezer?.zet({ datum: weekLater(weken) });
     }),
   );
 
   vervolgAan.onchange = () => {
     vervolgVelden.hidden = !vervolgAan.checked;
-    if (vervolgAan.checked && !form.datum.value) {
-      // Standaard zes weken later; dat is het meest gekozen ritme.
-      wekenRij.querySelector('[data-weken="6"]')?.click();
-    }
+    if (!vervolgAan.checked || vervolgKiezer) return;
+    markeerWeek(6);
+    const vervolgDatum = weekLater(6);
+    const eigenTijd = tijdVan(afspraak.start);
+    vervolgKiezer = maakTijdkiezer(document.getElementById("detail-tijdkiezer"), {
+      datum: vervolgDatum,
+      tijd:
+        overlapMet({ datum: vervolgDatum, tijd: eigenTijd, duurMin: Number(form.duurMin.value) }).length === 0
+          ? eigenTijd
+          : eersteVrijeTijd(vervolgDatum, Number(form.duurMin.value)) || eigenTijd,
+      duurMin: Number(form.duurMin.value),
+      // Een zelf gekozen dag hoort niet meer bij een weekknopje.
+      onWijzig: () => markeerWeek(null),
+    });
   };
-  form.datum.onchange = toonRuimte;
-  form.duurMin.onchange = toonRuimte;
+  form.duurMin.onchange = () => vervolgKiezer?.zet({ duurMin: Number(form.duurMin.value) });
 
   // --- onderin: verplaatsen en verwijderen
   dlg.querySelector("[data-detail-verplaats]").onclick = () => {
@@ -580,14 +580,11 @@ export function openAfspraakDetail(afspraakId) {
       );
     }
 
-    if (vervolgAan.checked) {
-      if (!form.datum.value || !form.tijd.value) {
-        return toonFout(dlg, "Kies een datum en tijd voor de vervolgafspraak.");
-      }
-      const sleutel = `${form.datum.value}T${form.tijd.value}-${form.duurMin.value}`;
+    if (vervolgAan.checked && vervolgKiezer) {
+      const sleutel = `${vervolgKiezer.datum}T${vervolgKiezer.tijd}-${form.duurMin.value}`;
       const botsing = overlapMet({
-        datum: form.datum.value,
-        tijd: form.tijd.value,
+        datum: vervolgKiezer.datum,
+        tijd: vervolgKiezer.tijd,
         duurMin: Number(form.duurMin.value),
       });
       if (botsing.length && bevestigd !== sleutel) {
@@ -596,7 +593,7 @@ export function openAfspraakDetail(afspraakId) {
       }
       const vervolg = voegAfspraakToe({
         klantId: afspraak.klantId,
-        start: `${form.datum.value}T${form.tijd.value}`,
+        start: `${vervolgKiezer.datum}T${vervolgKiezer.tijd}`,
         duurMin: Number(form.duurMin.value),
         behandeling: afspraak.behandeling,
         locatie: afspraak.locatie,
@@ -631,35 +628,27 @@ function hoofdletter(tekst) {
 /* --------------------------------------------------- plannen en verplaatsen */
 
 /** Nieuwe afspraak inplannen, eventueel met een tijdstip uit de agenda. */
-export function openAfspraakDialoog({ datum = vandaagISO(), tijd = "10:00" } = {}) {
+export function openAfspraakDialoog({ datum = vandaagISO(), tijd = null } = {}) {
   const dlg = document.getElementById("dlg-afspraak");
   const form = document.getElementById("form-afspraak");
 
   vulKlantKeuze(form.klantId);
-  form.datum.value = datum;
-  form.tijd.value = tijd;
   form.duurMin.value = "60";
   form.behandeling.value = "";
   form.locatie.value = plaatsVanKlant(getKlant(form.klantId.value));
 
-  const toonRuimte = () =>
-    werkRuimteBij({
-      datum: form.datum.value,
-      duurMin: Number(form.duurMin.value),
-      overzichtEl: document.getElementById("afspraak-dagoverzicht"),
-      slotsEl: document.getElementById("afspraak-slots"),
-      rijEl: document.getElementById("afspraak-slots-rij"),
-      kiesTijd: (gekozen) => {
-        form.tijd.value = gekozen;
-      },
-    });
+  const kiezer = maakTijdkiezer(document.getElementById("afspraak-tijdkiezer"), {
+    datum,
+    // Zonder tijdstip uit de agenda: het eerste moment dat vrij is.
+    tijd: tijd || eersteVrijeTijd(datum, 60) || "10:00",
+    duurMin: 60,
+  });
 
   // Bij een andere klant hoort standaard ook de plaats van die klant.
   form.klantId.onchange = () => {
     form.locatie.value = plaatsVanKlant(getKlant(form.klantId.value));
   };
-  form.datum.onchange = toonRuimte;
-  form.duurMin.onchange = toonRuimte;
+  form.duurMin.onchange = () => kiezer.zet({ duurMin: Number(form.duurMin.value) });
 
   document.getElementById("afspraak-salon").onclick = () => {
     form.locatie.value = SALON;
@@ -678,14 +667,11 @@ export function openAfspraakDialoog({ datum = vandaagISO(), tijd = "10:00" } = {
   form.onsubmit = (event) => {
     event.preventDefault();
     if (!form.klantId.value) return toonFout(dlg, "Kies eerst een klant.");
-    if (!form.datum.value || !form.tijd.value) {
-      return toonFout(dlg, "Vul een datum en een tijd in.");
-    }
 
-    const sleutel = `${form.datum.value}T${form.tijd.value}-${form.duurMin.value}`;
+    const sleutel = `${kiezer.datum}T${kiezer.tijd}-${form.duurMin.value}`;
     const botsing = overlapMet({
-      datum: form.datum.value,
-      tijd: form.tijd.value,
+      datum: kiezer.datum,
+      tijd: kiezer.tijd,
       duurMin: Number(form.duurMin.value),
     });
     if (botsing.length && bevestigd !== sleutel) {
@@ -695,7 +681,7 @@ export function openAfspraakDialoog({ datum = vandaagISO(), tijd = "10:00" } = {
 
     const afspraak = voegAfspraakToe({
       klantId: form.klantId.value,
-      start: `${form.datum.value}T${form.tijd.value}`,
+      start: `${kiezer.datum}T${kiezer.tijd}`,
       duurMin: Number(form.duurMin.value),
       behandeling: form.behandeling.value.trim(),
       locatie: form.locatie.value.trim(),
@@ -706,31 +692,6 @@ export function openAfspraakDialoog({ datum = vandaagISO(), tijd = "10:00" } = {
   };
 
   openDialoog(dlg);
-  toonRuimte();
-}
-
-/** Wat staat er al op die dag, en waar is nog ruimte? */
-function werkRuimteBij({ datum, duurMin, negeerId = null, overzichtEl, slotsEl, rijEl, kiesTijd }) {
-  const bezet = afsprakenOp(datum).filter((a) => a.id !== negeerId);
-  overzichtEl.textContent = bezet.length
-    ? `Al gepland: ${bezet
-        .map((a) => `${tijdvak(a.start, a.duurMin)} ${getKlant(a.klantId)?.naam || "?"}`)
-        .join(" · ")}`
-    : "Er staat nog niets op deze dag.";
-
-  const slots = vrijeSlots(datum, duurMin, { negeerId });
-  if (!bezet.length || !slots.length) {
-    slotsEl.hidden = true;
-    rijEl.innerHTML = "";
-    return;
-  }
-  slotsEl.hidden = false;
-  rijEl.innerHTML = slots
-    .map((t) => `<button type="button" class="slot" data-slot="${t}">${t}</button>`)
-    .join("");
-  rijEl.querySelectorAll("[data-slot]").forEach((knop) =>
-    knop.addEventListener("click", () => kiesTijd(knop.dataset.slot)),
-  );
 }
 
 function botsingTekst(botsing) {
@@ -758,22 +719,19 @@ export function openVerplaatsDialoog(afspraakId) {
   if (!afspraak) return;
 
   const klant = getKlant(afspraak.klantId);
+  const oudeDatum = datumVan(afspraak.start);
   document.getElementById("verplaats-context").textContent =
-    `${klant ? klant.naam : "Afspraak"} — staat nu op ${dagLabel(datumVan(afspraak.start))} ${tijdvak(afspraak.start, afspraak.duurMin)}`;
-
-  form.datum.value = datumVan(afspraak.start);
-  form.tijd.value = tijdVan(afspraak.start);
+    `${klant ? klant.naam : "Afspraak"} — staat nu op ${dagLabel(oudeDatum)} ${tijdvak(afspraak.start, afspraak.duurMin)}`;
 
   // De omzet hangt aan de afspraak en verhuist dus mee naar de nieuwe dag.
   const gevolgen = document.getElementById("verplaats-gevolgen");
-  const toonGevolgen = () => {
+  const toonGevolgen = (datum) => {
     const regels = [];
     const totaal = omzetTotaal(afspraak.omzet);
-    const oudeDatum = datumVan(afspraak.start);
-    if (totaal && form.datum.value !== oudeDatum) {
+    if (totaal && datum !== oudeDatum) {
       regels.push(`De omzet van ${euro(totaal)} telt daarna mee op de nieuwe dag.`);
     }
-    const afgesloten = [oudeDatum, form.datum.value]
+    const afgesloten = [oudeDatum, datum]
       .filter((d, i, lijst) => d && lijst.indexOf(d) === i && getAfsluiting(d))
       .map((d) => dagLabel(d));
     if (afgesloten.length) {
@@ -785,34 +743,22 @@ export function openVerplaatsDialoog(afspraakId) {
     gevolgen.hidden = regels.length === 0;
   };
 
-  const toonRuimte = () =>
-    werkRuimteBij({
-      datum: form.datum.value,
-      duurMin: afspraak.duurMin,
-      negeerId: afspraak.id,
-      overzichtEl: document.getElementById("verplaats-dagoverzicht"),
-      slotsEl: document.getElementById("verplaats-slots"),
-      rijEl: document.getElementById("verplaats-slots-rij"),
-      kiesTijd: (gekozen) => {
-        form.tijd.value = gekozen;
-      },
-    });
-  form.datum.onchange = () => {
-    toonRuimte();
-    toonGevolgen();
-  };
+  const kiezer = maakTijdkiezer(document.getElementById("verplaats-tijdkiezer"), {
+    datum: oudeDatum,
+    tijd: tijdVan(afspraak.start),
+    duurMin: afspraak.duurMin,
+    negeerId: afspraak.id,
+    onWijzig: ({ datum }) => toonGevolgen(datum),
+  });
+  toonGevolgen(oudeDatum);
 
   let bevestigd = "";
   form.onsubmit = (event) => {
     event.preventDefault();
-    if (!form.datum.value || !form.tijd.value) {
-      return toonFout(dlg, "Vul een datum en een tijd in.");
-    }
-
-    const sleutel = `${form.datum.value}T${form.tijd.value}`;
+    const sleutel = `${kiezer.datum}T${kiezer.tijd}`;
     const botsing = overlapMet({
-      datum: form.datum.value,
-      tijd: form.tijd.value,
+      datum: kiezer.datum,
+      tijd: kiezer.tijd,
       duurMin: afspraak.duurMin,
       negeerId: afspraak.id,
     });
@@ -821,13 +767,11 @@ export function openVerplaatsDialoog(afspraakId) {
       return toonFout(dlg, `${botsingTekst(botsing)} Klik nogmaals op Verplaatsen om het tóch te doen.`);
     }
 
-    verplaatsAfspraak(afspraak.id, `${form.datum.value}T${form.tijd.value}`);
+    verplaatsAfspraak(afspraak.id, `${kiezer.datum}T${kiezer.tijd}`);
     dlg.close();
-    agendaDatum = form.datum.value;
+    agendaDatum = kiezer.datum;
     melding("Afspraak verplaatst");
   };
 
   openDialoog(dlg);
-  toonRuimte();
-  toonGevolgen();
 }
