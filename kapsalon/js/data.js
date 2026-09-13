@@ -37,21 +37,21 @@ export function maakStartData() {
 
   const afspraken = [
     // Afgelopen dag die al is afgesloten.
-    { id: "a1", klantId: "k6", start: moment(-3, "11:00"), duurMin: 45, locatie: plaatsVan("k6"), behandeling: "Knippen", omzet: { bedragCent: 3500, betaald: true, methode: "cash" }, verplaatstVan: null },
-    { id: "a2", klantId: "k5", start: moment(-3, "13:00"), duurMin: 60, locatie: plaatsVan("k5"), behandeling: "Knippen + föhnen", omzet: { bedragCent: 4000, betaald: true, methode: "cash" }, verplaatstVan: null },
+    { id: "a1", klantId: "k6", start: moment(-3, "11:00"), duurMin: 45, locatie: plaatsVan("k6"), behandeling: "Knippen", notitie: "Iets korter in de nek dan vorige keer.", omzet: { bedragCent: 3500, producten: [], betaald: true, methode: "cash" }, verplaatstVan: null },
+    { id: "a2", klantId: "k5", start: moment(-3, "13:00"), duurMin: 60, locatie: plaatsVan("k5"), behandeling: "Knippen + föhnen", notitie: "Shampoo voor krullen verkocht, bevalt goed.", omzet: { bedragCent: 4000, producten: [{ id: "p1", omschrijving: "Shampoo krullen 250ml", bedragCent: 1495 }], betaald: true, methode: "cash" }, verplaatstVan: null },
 
     // Gisteren: nog niet afgesloten, en laat de drie omzet-toestanden zien.
-    { id: "a3", klantId: "k1", start: moment(-1, "10:00"), duurMin: 60, locatie: plaatsVan("k1"), behandeling: "Knippen + föhnen", omzet: { bedragCent: 4500, betaald: true, methode: "bank" }, verplaatstVan: null },
-    { id: "a4", klantId: "k2", start: moment(-1, "13:30"), duurMin: 120, locatie: plaatsVan("k2"), behandeling: "Kleuren + knippen", omzet: { bedragCent: 8250, betaald: false, methode: null }, verplaatstVan: null },
-    { id: "a5", klantId: "k4", start: moment(-1, "16:00"), duurMin: 45, locatie: plaatsVan("k4"), behandeling: "Knippen", omzet: null, verplaatstVan: null },
+    { id: "a3", klantId: "k1", start: moment(-1, "10:00"), duurMin: 60, locatie: plaatsVan("k1"), behandeling: "Knippen + föhnen", notitie: "Pony bijgeknipt, wil hem iets langer houden.", omzet: { bedragCent: 4500, producten: [], betaald: true, methode: "bank" }, verplaatstVan: null },
+    { id: "a4", klantId: "k2", start: moment(-1, "13:30"), duurMin: 120, locatie: plaatsVan("k2"), behandeling: "Kleuren + knippen", notitie: "Kleur 7.1 met 6 vol oxidant, 35 min laten zitten.", omzet: { bedragCent: 8250, producten: [{ id: "p2", omschrijving: "Kleurbeschermende conditioner", bedragCent: 1850 }], betaald: false, methode: null }, verplaatstVan: null },
+    { id: "a5", klantId: "k4", start: moment(-1, "16:00"), duurMin: 45, locatie: plaatsVan("k4"), behandeling: "Knippen", notitie: "", omzet: null, verplaatstVan: null },
 
     // Vandaag en verder.
-    { id: "a6", klantId: "k5", start: moment(0, "09:30"), duurMin: 45, locatie: plaatsVan("k5"), behandeling: "Knippen", omzet: null, verplaatstVan: null },
-    { id: "a7", klantId: "k3", start: moment(0, "14:00"), duurMin: 180, locatie: plaatsVan("k3"), behandeling: "Permanent", omzet: null, verplaatstVan: null },
-    { id: "a8", klantId: "k4", start: moment(2, "10:00"), duurMin: 120, locatie: plaatsVan("k4"), behandeling: "Kleuren + knippen", omzet: null, verplaatstVan: moment(1, "10:00") },
-    { id: "a9", klantId: "k1", start: moment(5, "11:00"), duurMin: 30, locatie: SALON, behandeling: "Föhnen", omzet: null, verplaatstVan: null },
-    { id: "a10", klantId: "k6", start: moment(9, "15:30"), duurMin: 60, locatie: plaatsVan("k6"), behandeling: "Knippen + watergolf", omzet: null, verplaatstVan: null },
-    { id: "a11", klantId: "k2", start: moment(16, "10:00"), duurMin: 90, locatie: plaatsVan("k2"), behandeling: "Kleuren", omzet: null, verplaatstVan: null },
+    { id: "a6", klantId: "k5", start: moment(0, "09:30"), duurMin: 45, locatie: plaatsVan("k5"), behandeling: "Knippen", notitie: "", omzet: null, verplaatstVan: null },
+    { id: "a7", klantId: "k3", start: moment(0, "14:00"), duurMin: 180, locatie: plaatsVan("k3"), behandeling: "Permanent", notitie: "", omzet: null, verplaatstVan: null },
+    { id: "a8", klantId: "k4", start: moment(2, "10:00"), duurMin: 120, locatie: plaatsVan("k4"), behandeling: "Kleuren + knippen", notitie: "", omzet: null, verplaatstVan: moment(1, "10:00") },
+    { id: "a9", klantId: "k1", start: moment(5, "11:00"), duurMin: 30, locatie: SALON, behandeling: "Föhnen", notitie: "", omzet: null, verplaatstVan: null },
+    { id: "a10", klantId: "k6", start: moment(9, "15:30"), duurMin: 60, locatie: plaatsVan("k6"), behandeling: "Knippen + watergolf", notitie: "", omzet: null, verplaatstVan: null },
+    { id: "a11", klantId: "k2", start: moment(16, "10:00"), duurMin: 90, locatie: plaatsVan("k2"), behandeling: "Kleuren", notitie: "", omzet: null, verplaatstVan: null },
   ];
 
   const stortingen = [
@@ -75,8 +75,8 @@ export function maakStartData() {
       km: 13,
       uren: 1.75,
       aantalAfspraken: 2,
-      omzetCent: 7500,
-      cashCent: 7500,
+      omzetCent: 8995,
+      cashCent: 8995,
       bankCent: 0,
       openCent: 0,
       afgeslotenOp: `${dag(-3)}T17:10`,

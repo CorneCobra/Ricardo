@@ -283,11 +283,19 @@ a { color: var(--accent-dark); }
   box-shadow: var(--schaduw);
   padding: 1rem;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.85rem;
   margin-bottom: 1rem;
 }
 
-.veld { display: grid; gap: 0.3rem; margin: 0; padding: 0; border: 0; }
+.veld {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
 
 .veld--duo {
   display: grid;
@@ -297,8 +305,11 @@ a { color: var(--accent-dark); }
 
 .veld--duo > div { display: grid; gap: 0.3rem; }
 
-.veld__rij { display: flex; gap: 0.5rem; align-items: stretch; }
-.veld__rij > :first-child { flex: 1; min-width: 0; }
+.veld__rij { display: flex; gap: 0.5rem; align-items: stretch; flex-wrap: wrap; }
+.veld__rij > :first-child { flex: 1; }
+/* Zonder min-width duwen invoervelden hun eigen minimumbreedte door en loopt
+   een dialoog buiten het scherm. */
+.veld__rij > * { min-width: 0; }
 
 label, legend {
   font-size: 0.85rem;
@@ -316,6 +327,7 @@ select,
 textarea {
   font: inherit;
   width: 100%;
+  min-width: 0;
   padding: 0.65rem 0.7rem;
   min-height: 44px;
   border: 1px solid var(--border);
@@ -409,7 +421,12 @@ textarea { min-height: 66px; resize: vertical; }
 
 .dlg::backdrop { background: rgba(43, 33, 31, 0.45); }
 
-.dlg__form { display: grid; gap: 0.85rem; padding: 1.15rem; }
+.dlg__form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 1.15rem;
+}
 
 .dlg__context {
   margin: -0.35rem 0 0;
@@ -672,6 +689,178 @@ input[type="file"] {
 }
 
 .cijfer--negatief strong { color: var(--gevaar); }
+
+/* ---------------------------------------------------------- WhatsApp-knop */
+
+.wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  min-height: 40px;
+  border-radius: 999px;
+  background: #e7f6ec;
+  color: #12703f;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wa:hover { background: #d6efdf; }
+.wa svg { flex: none; }
+
+/* -------------------------------------------------- producten en notities */
+
+.veld__kop { font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+
+.producten { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }
+
+.product {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 0.9rem;
+}
+
+.product span { flex: 1; min-width: 0; }
+.product .knop { min-height: 32px; padding: 0.2rem 0.5rem; }
+
+.veld__valuta--smal { flex: 0 1 7rem; min-width: 5.5rem; }
+
+.detail__rij {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.detail__contact { margin: 0; }
+
+.detail__notitie {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-zacht);
+  border-radius: 0 8px 8px 0;
+  font-size: 0.85rem;
+  color: var(--accent-dark);
+}
+
+.detail__extra {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.blokje {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.blokje h3 { font-size: 0.95rem; color: var(--accent-dark); }
+
+.notities { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+
+.notities li {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+
+.notities__kop { font-size: 0.78rem; color: var(--muted); }
+
+/* ------------------------------------------------------- compacte rijen */
+
+.lijst--dicht { gap: 0.4rem; }
+
+.rij {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.rij--klikbaar { cursor: pointer; }
+.rij--klikbaar:hover { border-color: var(--accent); }
+.rij--klikbaar:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.rij--klaar { opacity: 0.75; }
+
+.rij__kop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rij__bedrag { font-variant-numeric: tabular-nums; color: var(--muted); }
+
+.rij__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.rij__let-op { color: var(--open); font-weight: 600; }
+
+.rij .badges { margin-top: 0.35rem; }
+
+.paneel--plat { box-shadow: none; padding: 0.8rem; }
+
+.kaart--klikbaar { cursor: pointer; }
+.kaart--klikbaar:hover { border-color: var(--accent); }
+.kaart--klikbaar:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ------------------------------------------------------- betaalkeuze */
+
+.keuzerij { display: flex; gap: 0.4rem; }
+
+.keuzeknop {
+  flex: 1;
+  min-width: 0;
+  appearance: none;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.55rem 0.4rem;
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.keuzeknop:hover { border-color: var(--accent); }
+.keuzeknop:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.keuzeknop--actief { color: var(--text); border-width: 2px; }
+.keuzeknop--open { background: var(--neutraal-bg); border-color: var(--neutraal); color: var(--neutraal); }
+.keuzeknop--cash,
+.keuzeknop--bank { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
+
+.waarschuwing--klein { margin: 0; font-size: 0.85rem; }
 
 /* ------------------------------------------------------------- tabbalk */
 

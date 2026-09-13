@@ -27,14 +27,26 @@ bladeren. Afspraken staan als blokken op hun eigen tijd en hoogte; tik op een
 vrije plek en de nieuwe-afspraakdialoog staat meteen op dat kwartier. Tik op
 een blok voor omzet, verplaatsen of verwijderen.
 
-In beide weergaven:
+**Tik op een afspraak** en je krijgt één werkscherm met alles wat erbij hoort:
 
-- Per afspraak zie je in één oogopslag de omzetstatus:
-  - grijs — nog geen omzet geregistreerd;
-  - oranje — bedrag bekend, nog niet betaald;
-  - groen — betaald, met bank of cash erbij.
-- **Omzet** registreren of corrigeren, **Verplaatsen** naar een andere dag of
-  tijd (de afspraak krijgt dan het label *Verplaatst*) en **Verwijderen**.
+- **Omzet & betaling** — het bedrag van de behandeling, losse **verkochte
+  producten** (tekst + bedrag, zoveel als je wilt) en de betaling als één rij:
+  *Nog niet* · *Cash* · *Bank*, dus één tik.
+- **Notities** — een notitie bij deze afspraak, een notitie over de klant die
+  bij elke afspraak blijft staan, en daaronder wat je de vorige keren hebt
+  opgeschreven.
+- **Vervolgafspraak** — meteen inplannen met knopjes voor 1 tot 12 weken
+  later; datum en tijd zijn daarna nog aan te passen, inclusief controle op
+  overlap.
+- Onderin **Verplaatsen** en **Verwijderen**.
+
+Verder in beide weergaven:
+
+- Een **WhatsApp-knop** per afspraak: opent de chat met die klant, met een leeg
+  bericht.
+- De omzetstatus als badge: grijs (nog niets geregistreerd), oranje (bedrag
+  bekend, niet betaald) of groen (betaald, met cash of bank erbij), plus een
+  losse badge als er producten verkocht zijn.
 - Met *Toon ook afgelopen afspraken* haal je de afgelopen dagen erbij, zodat je
   omzet van gisteren alsnog kunt invullen.
 - **+ Nieuwe afspraak**: kies een bestaande klant of maak er direct een nieuwe
@@ -47,8 +59,8 @@ In beide weergaven:
 
 **Klanten**
 
-Het lijstje dat op de achtergrond meegroeit. Naam, telefoonnummer, plaats, een
-notitie en de afstand heen en terug in kilometers.
+Het lijstje dat op de achtergrond meegroeit. Naam, telefoonnummer (met
+WhatsApp-knop), plaats, een notitie en de afstand heen en terug in kilometers.
 
 **Overzicht**
 
@@ -67,14 +79,23 @@ Onder de cijfers beheer je twee lijsten:
 
 **Afsluiten (dagafsluiting)**
 
-Kies een dag en zie wat die heeft opgeleverd: de omzet, gesplitst naar cash,
+Een korte lijst van de dagen die nog op een afsluiting wachten, met per dag de
+omzet, het aantal afspraken, de kilometers en uren en een waarschuwing als er
+nog een afspraak zonder omzet tussen zit. Tik op een dag en je ziet wat die
+heeft opgeleverd: de omzet, gesplitst naar cash,
 bank en nog openstaand, het aantal afspraken, de gereden kilometers en de
 gewerkte uren. Die laatste twee worden berekend uit de afspraken van die dag —
 kilometers uit de vaste afstand per klant (dezelfde klant twee keer op een dag
 telt als één rit), uren uit de duur van de afspraken — en blijven corrigeerbaar
-voor je de dag vastzet. Staat er nog een afspraak zonder omzet, dan waarschuwt
-het scherm en kun je die omzet er meteen invullen. Een afgesloten dag kun je
+voor je de dag vastzet. Staat er nog een afspraak zonder omzet, dan tik je die
+in hetzelfde scherm aan om hem in te vullen. Een afgesloten dag kun je
 heropenen om iets te corrigeren.
+
+> De omzet hangt aan de afspraak. Verplaats je een afspraak naar een andere
+> dag, dan verhuist de omzet mee (het scherm waarschuwt daarvoor); verwijder je
+> een afspraak, dan verdwijnt de omzet uit je cijfers. Een al afgesloten dag
+> wordt daar niet automatisch op bijgewerkt — heropen die dag en sluit hem
+> opnieuw af.
 
 ## Lokaal draaien
 

@@ -5,8 +5,9 @@
  */
 
 import { getKlanten, getKlant, voegKlantToe, wijzigKlant } from "../store.js";
-import { getal, telHref, veilig } from "../format.js";
+import { getal, veilig } from "../format.js";
 import { melding, openDialoog, toonFout } from "../ui.js";
+import { whatsappKnop } from "./afspraken.js";
 
 export function render(root) {
   const klanten = getKlanten();
@@ -41,10 +42,7 @@ function kaart(klant) {
         <h3>${veilig(klant.naam)}</h3>
         <button type="button" class="knop knop--stil knop--klein" data-bewerk-klant="${klant.id}">Bewerken</button>
       </div>
-      <p class="kaart__regel">
-        <span aria-hidden="true">📞</span>
-        <a href="${telHref(klant.telefoon)}">${veilig(klant.telefoon)}</a>
-      </p>
+      ${klant.telefoon ? whatsappKnop(klant) : ""}
       ${klant.plaats ? `<p class="kaart__regel"><span aria-hidden="true">📍</span> ${veilig(klant.plaats)}</p>` : ""}
       <p class="kaart__regel kaart__regel--stil">
         <span aria-hidden="true">🚗</span> ${getal(klant.afstandKm)} km heen en terug

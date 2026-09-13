@@ -1,8 +1,8 @@
 /*
- * Tab "Afsluiten": de dagafsluiting. Je kiest een dag en ziet wat die dag
- * heeft opgeleverd — omzet gesplitst naar cash, bank en nog openstaand — plus
- * de kilometers en gewerkte uren, berekend uit de afspraken van die dag.
- * Kilometers en uren zijn corrigeerbaar voordat je de dag vastzet.
+ * Tab "Afsluiten": een korte lijst van de dagen die nog afgesloten moeten
+ * worden. Tik op een dag en je krijgt de cijfers van die dag — omzet
+ * gesplitst naar cash, bank en openstaand, plus kilometers en uren die uit de
+ * afspraken berekend zijn — en sluit hem daar af.
  */
 
 import {
@@ -12,6 +12,7 @@ import {
   getAfsluitingen,
   getKlant,
   heropenDag,
+  openDagen,
   sluitDag,
 } from "../store.js";
 import {
@@ -19,181 +20,187 @@ import {
   dagLabel,
   euro,
   getal,
-  naarISODatum,
   tijdVan,
   tijdvak,
-  vandaagISO,
   veilig,
 } from "../format.js";
-import { melding } from "../ui.js";
-import { koppelKaartknoppen, omzetBadge } from "./afspraken.js";
+import { melding, openDialoog } from "../ui.js";
+import { koppelAfspraakKlik, omzetBadge } from "./afspraken.js";
 
-// De gekozen dag blijft staan zolang de app open is.
-let datum = vandaagISO();
+// De dag die op dit moment in de dialoog staat.
+let dialoogDatum = null;
 
 export function render(root) {
-  const totalen = dagTotalen(datum);
-  const afsluiting = getAfsluiting(datum);
-  const afspraken = afsprakenOp(datum);
-  const eerdere = getAfsluitingen().filter((a) => a.datum !== datum);
+  const open = openDagen();
+  const afgesloten = getAfsluitingen();
 
   root.innerHTML = `
-    <div class="kop"><h2>Dagafsluiting</h2></div>
-
-    <div class="dagkiezer">
-      <button type="button" class="knop knop--stil knop--rond" data-dag="-1" aria-label="Vorige dag">‹</button>
-      <div class="dagkiezer__midden">
-        <strong>${veilig(dagLabel(datum))}</strong>
-        <input type="date" value="${datum}" data-dagdatum aria-label="Kies een dag" />
-      </div>
-      <button type="button" class="knop knop--stil knop--rond" data-dag="1" aria-label="Volgende dag">›</button>
-    </div>
+    <div class="kop"><h2>Afsluiten</h2></div>
 
     ${
-      afsluiting
-        ? `<p class="badges"><span class="badge badge--ok">Afgesloten · vastgelegd ${veilig(dagKort(afsluiting.afgeslotenOp))} ${tijdVan(afsluiting.afgeslotenOp)}</span></p>`
-        : ""
-    }
-
-    <div class="paneel paneel--totalen">
-      <div class="cijfer cijfer--groot">
-        <span>Omzet</span>
-        <strong>${euro(totalen.omzetCent)}</strong>
-      </div>
-      <div class="cijfers">
-        <div class="cijfer"><span>Cash</span><strong>${euro(totalen.cashCent)}</strong></div>
-        <div class="cijfer"><span>Bank</span><strong>${euro(totalen.bankCent)}</strong></div>
-        <div class="cijfer ${totalen.openCent ? "cijfer--open" : ""}"><span>Openstaand</span><strong>${euro(totalen.openCent)}</strong></div>
-      </div>
-      <div class="cijfers">
-        <div class="cijfer"><span>Afspraken</span><strong>${totalen.aantalAfspraken}</strong></div>
-        <div class="cijfer"><span>Kilometers</span><strong>${getal(totalen.km)} km</strong></div>
-        <div class="cijfer"><span>Gewerkt</span><strong>${getal(totalen.uren, 2)} uur</strong></div>
-      </div>
-      <p class="hint">
-        Kilometers uit de vaste afstand van de klanten van deze dag (dezelfde
-        klant telt één rit); uren uit de duur van de afspraken.
-      </p>
-    </div>
-
-    ${
-      totalen.zonderOmzet
-        ? `<p class="waarschuwing">Nog ${totalen.zonderOmzet} ${totalen.zonderOmzet === 1 ? "afspraak" : "afspraken"} zonder omzet. Vul die eerst in, dan klopt de afsluiting.</p>`
-        : ""
-    }
-
-    <form class="paneel" id="form-afsluiten" novalidate>
-      <div class="veld veld--duo">
-        <div>
-          <label for="afsluit-km">Kilometers</label>
-          <input id="afsluit-km" name="km" type="number" inputmode="decimal" min="0" step="0.1"
-            value="${afsluiting ? afsluiting.km : totalen.km}" />
-        </div>
-        <div>
-          <label for="afsluit-uren">Uren</label>
-          <input id="afsluit-uren" name="uren" type="number" inputmode="decimal" min="0" step="0.25"
-            value="${afsluiting ? afsluiting.uren : totalen.uren}" />
-        </div>
-      </div>
-      <p class="hint">Berekend uit deze dag — pas aan als je extra hebt gereden of gewerkt.</p>
-      <p class="dlg__fout" data-fout hidden></p>
-      <div class="veld__rij">
-        <button type="submit" class="knop knop--breed">
-          ${afsluiting ? "Afsluiting bijwerken" : "Dag afsluiten"}
-        </button>
-        ${afsluiting ? `<button type="button" class="knop knop--stil" data-heropen>Heropenen</button>` : ""}
-      </div>
-    </form>
-
-    <h3 class="groep__kop">Afspraken op deze dag</h3>
-    ${
-      afspraken.length === 0
-        ? `<p class="leeg">Geen afspraken op deze dag.</p>`
-        : `<ul class="lijst">${afspraken.map(regel).join("")}</ul>`
+      open.length
+        ? `<p class="agenda__hint">${open.length} ${open.length === 1 ? "dag wacht" : "dagen wachten"} nog op een afsluiting. Tik op een dag om hem af te sluiten.</p>
+           <ul class="lijst lijst--dicht">${open.map(openRegel).join("")}</ul>`
+        : `<p class="leeg">Alles is afgesloten. Netjes.</p>`
     }
 
     ${
-      eerdere.length
-        ? `<h3 class="groep__kop">Eerder afgesloten</h3>
-           <ul class="lijst">${eerdere.slice(0, 10).map(eerderRegel).join("")}</ul>`
+      afgesloten.length
+        ? `<h3 class="groep__kop">Afgesloten</h3>
+           <ul class="lijst lijst--dicht">${afgesloten.slice(0, 14).map(afgeslotenRegel).join("")}</ul>`
         : ""
     }
   `;
 
-  root.querySelectorAll("[data-dag]").forEach((knop) =>
-    knop.addEventListener("click", () => {
-      const d = new Date(`${datum}T12:00`);
-      d.setDate(d.getDate() + Number(knop.dataset.dag));
-      datum = naarISODatum(d);
-      render(root);
+  root.querySelectorAll("[data-dagrij]").forEach((rij) =>
+    rij.addEventListener("click", () => openDagDialoog(rij.dataset.dagrij)),
+  );
+  root.querySelectorAll("[data-dagrij]").forEach((rij) =>
+    rij.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      openDagDialoog(rij.dataset.dagrij);
     }),
   );
 
-  root.querySelector("[data-dagdatum]").addEventListener("change", (event) => {
-    if (!event.target.value) return;
-    datum = event.target.value;
-    render(root);
-  });
-
-  const form = root.querySelector("#form-afsluiten");
-  const fout = form.querySelector("[data-fout]");
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (form.km.value === "" || form.uren.value === "") {
-      fout.textContent = "Vul kilometers en uren in.";
-      fout.hidden = false;
-      return;
-    }
-    sluitDag({ datum, km: Number(form.km.value), uren: Number(form.uren.value) });
-    melding(afsluiting ? "Afsluiting bijgewerkt" : "Dag afgesloten");
-  });
-
-  root.querySelectorAll("[data-bekijk]").forEach((knop) =>
-    knop.addEventListener("click", () => {
-      datum = knop.dataset.bekijk;
-      render(root);
-    }),
-  );
-
-  root.querySelector("[data-heropen]")?.addEventListener("click", () => {
-    heropenDag(datum);
-    melding("Dag weer open");
-  });
-
-  koppelKaartknoppen(root);
+  // Staat de dagdialoog open, dan moet die meebewegen met wijzigingen.
+  const dlg = document.getElementById("dlg-dag");
+  if (dlg.open && dialoogDatum) vulDagDialoog(dialoogDatum);
 }
 
-/** Compacte regel per afspraak, met de knoppen uit het afsprakenscherm. */
-function regel(afspraak) {
-  const klant = getKlant(afspraak.klantId);
+/** Compacte regel voor een dag die nog open staat. */
+function openRegel(totalen) {
   return `
-    <li class="kaart">
-      <div class="kaart__kop">
-        <div>
-          <h3>${veilig(klant ? klant.naam : "Onbekende klant")}</h3>
-          <p class="kaart__behandeling">${veilig([tijdvak(afspraak.start, afspraak.duurMin), afspraak.behandeling].filter(Boolean).join(" · "))}</p>
-        </div>
+    <li class="rij rij--klikbaar" data-dagrij="${totalen.datum}" tabindex="0" role="button"
+        aria-label="${veilig(dagLabel(totalen.datum))} afsluiten">
+      <div class="rij__kop">
+        <strong>${veilig(dagLabel(totalen.datum))}</strong>
+        <span class="rij__bedrag">${euro(totalen.omzetCent)}</span>
       </div>
-      <p class="badges">${omzetBadge(afspraak.omzet)}</p>
-      <div class="kaart__acties">
-        <button type="button" class="knop knop--klein" data-omzet="${afspraak.id}">
-          ${afspraak.omzet ? "Omzet aanpassen" : "Omzet"}
-        </button>
+      <div class="rij__meta">
+        <span>${totalen.aantalAfspraken} ${totalen.aantalAfspraken === 1 ? "afspraak" : "afspraken"}</span>
+        <span>${getal(totalen.km)} km · ${getal(totalen.uren, 2)} uur</span>
+        ${
+          totalen.zonderOmzet
+            ? `<span class="rij__let-op">${totalen.zonderOmzet} zonder omzet</span>`
+            : ""
+        }
       </div>
     </li>
   `;
 }
 
-function eerderRegel(afsluiting) {
+/** Compacte regel voor een dag die al is afgesloten. */
+function afgeslotenRegel(afsluiting) {
   return `
-    <li class="kaart kaart--regel">
-      <div>
+    <li class="rij rij--klikbaar rij--klaar" data-dagrij="${afsluiting.datum}" tabindex="0" role="button"
+        aria-label="${veilig(dagKort(afsluiting.datum))} bekijken">
+      <div class="rij__kop">
         <strong>${veilig(dagKort(afsluiting.datum))}</strong>
-        <span class="kaart__regel kaart__regel--stil">
-          ${euro(afsluiting.omzetCent)} · ${getal(afsluiting.km)} km · ${getal(afsluiting.uren, 2)} uur
-        </span>
+        <span class="rij__bedrag">${euro(afsluiting.omzetCent)}</span>
       </div>
-      <button type="button" class="knop knop--stil knop--klein" data-bekijk="${afsluiting.datum}">Bekijk</button>
+      <div class="rij__meta">
+        <span>✅ afgesloten</span>
+        <span>${getal(afsluiting.km)} km · ${getal(afsluiting.uren, 2)} uur</span>
+      </div>
+    </li>
+  `;
+}
+
+/* --------------------------------------------------------- de dagdialoog */
+
+function openDagDialoog(datum) {
+  dialoogDatum = datum;
+  const dlg = document.getElementById("dlg-dag");
+  const form = document.getElementById("form-dag");
+
+  vulDagDialoog(datum);
+
+  form.onsubmit = (event) => {
+    event.preventDefault();
+    const fout = form.querySelector("[data-fout]");
+    if (form.km.value === "" || form.uren.value === "") {
+      fout.textContent = "Vul kilometers en uren in.";
+      fout.hidden = false;
+      return;
+    }
+    const bestond = Boolean(getAfsluiting(datum));
+    sluitDag({ datum, km: Number(form.km.value), uren: Number(form.uren.value) });
+    dlg.close();
+    melding(bestond ? "Afsluiting bijgewerkt" : "Dag afgesloten");
+  };
+
+  document.getElementById("dag-heropen").onclick = () => {
+    heropenDag(datum);
+    dlg.close();
+    melding("Dag weer open");
+  };
+
+  openDialoog(dlg);
+}
+
+/** Tekent de inhoud van de dagdialoog; ook na een wijziging in de store. */
+function vulDagDialoog(datum) {
+  const form = document.getElementById("form-dag");
+  const totalen = dagTotalen(datum);
+  const afsluiting = getAfsluiting(datum);
+  const afspraken = afsprakenOp(datum);
+
+  document.getElementById("dag-titel").textContent = dagLabel(datum);
+  document.getElementById("dag-context").textContent = afsluiting
+    ? `Afgesloten · vastgelegd ${dagKort(afsluiting.afgeslotenOp)} ${tijdVan(afsluiting.afgeslotenOp)}`
+    : `${totalen.aantalAfspraken} ${totalen.aantalAfspraken === 1 ? "afspraak" : "afspraken"} op deze dag`;
+
+  document.getElementById("dag-inhoud").innerHTML = `
+    <div class="paneel paneel--totalen paneel--plat">
+      <div class="cijfer cijfer--groot"><span>Omzet</span><strong>${euro(totalen.omzetCent)}</strong></div>
+      <div class="cijfers">
+        <div class="cijfer"><span>Cash</span><strong>${euro(totalen.cashCent)}</strong></div>
+        <div class="cijfer"><span>Bank</span><strong>${euro(totalen.bankCent)}</strong></div>
+        <div class="cijfer ${totalen.openCent ? "cijfer--open" : ""}"><span>Openstaand</span><strong>${euro(totalen.openCent)}</strong></div>
+      </div>
+      ${
+        totalen.productenCent
+          ? `<p class="hint">Waarvan ${euro(totalen.productenCent)} aan verkochte producten.</p>`
+          : ""
+      }
+    </div>
+
+    ${
+      totalen.zonderOmzet
+        ? `<p class="waarschuwing">Nog ${totalen.zonderOmzet} ${totalen.zonderOmzet === 1 ? "afspraak" : "afspraken"} zonder omzet. Tik de afspraak aan om die in te vullen.</p>`
+        : ""
+    }
+
+    ${
+      afspraken.length
+        ? `<ul class="lijst lijst--dicht">${afspraken.map(afspraakRegel).join("")}</ul>`
+        : `<p class="leeg">Geen afspraken op deze dag.</p>`
+    }
+  `;
+
+  form.km.value = afsluiting ? afsluiting.km : totalen.km;
+  form.uren.value = afsluiting ? afsluiting.uren : totalen.uren;
+  form.querySelector("[data-fout]").hidden = true;
+
+  document.getElementById("dag-opslaan").textContent = afsluiting
+    ? "Afsluiting bijwerken"
+    : "Dag afsluiten";
+  document.getElementById("dag-heropen").hidden = !afsluiting;
+
+  koppelAfspraakKlik(document.getElementById("dag-inhoud"));
+}
+
+function afspraakRegel(afspraak) {
+  const klant = getKlant(afspraak.klantId);
+  return `
+    <li class="rij rij--klikbaar" data-afspraak="${afspraak.id}" tabindex="0" role="button"
+        aria-label="Afspraak met ${veilig(klant ? klant.naam : "onbekende klant")} openen">
+      <div class="rij__kop">
+        <strong>${veilig(klant ? klant.naam : "Onbekende klant")}</strong>
+        <span class="rij__bedrag">${tijdvak(afspraak.start, afspraak.duurMin)}</span>
+      </div>
+      <p class="badges">${omzetBadge(afspraak.omzet)}</p>
     </li>
   `;
 }

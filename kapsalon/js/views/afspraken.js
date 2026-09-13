@@ -1,13 +1,13 @@
 /*
  * Tab "Afspraken": het startscherm, in twee weergaven.
  *
- * - Lijst: alle komende afspraken per dag, met wie, waar, hoe laat, het
- *   telefoonnummer en de omzetstatus.
+ * - Lijst: alle komende afspraken per dag, met wie, waar, hoe laat, een
+ *   WhatsApp-knop en de omzetstatus.
  * - Dag: een tijdlijn van één dag. Tik op een vrije plek om daar meteen een
- *   afspraak in te plannen, of op een blok om er iets mee te doen.
+ *   afspraak in te plannen.
  *
- * Bij het inplannen en verplaatsen wordt gecontroleerd of de afspraak niet
- * over een bestaande heen valt.
+ * Tikken op een afspraak opent één werkscherm waarin je de omzet en de
+ * betaling vastlegt én direct een vervolgafspraak plant.
  */
 
 import {
@@ -18,18 +18,25 @@ import {
   getAfspraak,
   getKlant,
   getKlanten,
+  getAfsluiting,
   getKomendeAfspraken,
+  omzetTotaal,
   overlapMet,
   plaatsVanKlant,
+  productenTotaal,
   tijdvakVan,
   verplaatsAfspraak,
   verwijderAfspraak,
+  vorigeNotities,
+  wijzigAfspraak,
+  wijzigKlant,
   voegAfspraakToe,
   vrijeSlots,
   zetOmzet,
 } from "../store.js";
 import { SALON } from "../data.js";
 import {
+  dagKort,
   dagLabel,
   datumVan,
   duurLabel,
@@ -39,9 +46,9 @@ import {
   tijdVan,
   tijdVanMinuten,
   tijdvak,
-  telHref,
   vandaagISO,
   veilig,
+  whatsappHref,
 } from "../format.js";
 import { melding, openDialoog, toonFout } from "../ui.js";
 import { openKlantDialoog } from "./klanten.js";
@@ -54,6 +61,9 @@ let agendaDatum = vandaagISO();
 
 /** Hoogte van één minuut in de dagagenda. */
 const PX_PER_MINUUT = 1.05;
+
+/** Snelkeuzes voor een vervolgafspraak. */
+const VERVOLG_WEKEN = [1, 2, 3, 4, 6, 8, 12];
 
 export function render(root) {
   root.innerHTML = `
@@ -118,7 +128,7 @@ function tekenLijst(inhoud, root) {
     render(root);
   });
 
-  koppelKaartknoppen(inhoud);
+  koppelAfspraakKlik(inhoud);
 }
 
 /** Afspraken gegroepeerd onder een dagkop, in de volgorde die binnenkomt. */
@@ -148,7 +158,9 @@ function kaart(afspraak) {
   const isVerleden = datumVan(afspraak.start) < vandaagISO();
 
   return `
-    <li class="kaart kaart--afspraak ${isVerleden ? "kaart--verleden" : ""}">
+    <li class="kaart kaart--afspraak kaart--klikbaar ${isVerleden ? "kaart--verleden" : ""}"
+        data-afspraak="${afspraak.id}" tabindex="0" role="button"
+        aria-label="Afspraak met ${veilig(naam)} openen">
       <div class="kaart__kop">
         <div>
           <h3>${veilig(naam)}</h3>
@@ -161,11 +173,7 @@ function kaart(afspraak) {
       </div>
 
       ${afspraak.locatie ? `<p class="kaart__regel"><span aria-hidden="true">📍</span> ${veilig(afspraak.locatie)}</p>` : ""}
-      ${
-        klant?.telefoon
-          ? `<p class="kaart__regel"><span aria-hidden="true">📞</span> <a href="${telHref(klant.telefoon)}">${veilig(klant.telefoon)}</a></p>`
-          : ""
-      }
+      ${klant?.telefoon ? whatsappKnop(klant) : ""}
 
       <p class="badges">
         ${omzetBadge(afspraak.omzet)}
@@ -175,47 +183,74 @@ function kaart(afspraak) {
             : ""
         }
       </p>
-
-      <div class="kaart__acties">
-        <button type="button" class="knop knop--klein" data-omzet="${afspraak.id}">
-          ${afspraak.omzet ? "Omzet aanpassen" : "Omzet"}
-        </button>
-        <button type="button" class="knop knop--stil knop--klein" data-verplaats="${afspraak.id}">Verplaatsen</button>
-        <button type="button" class="knop knop--kaal knop--klein" data-verwijder="${afspraak.id}">Verwijderen</button>
-      </div>
     </li>
   `;
 }
+
+/** Groene WhatsApp-knop die de chat met een leeg bericht opent. */
+export function whatsappKnop(klant) {
+  return `
+    <a class="wa" href="${whatsappHref(klant.telefoon)}" target="_blank" rel="noopener"
+       aria-label="WhatsApp ${veilig(klant.naam)}">
+      ${WA_ICOON}
+      <span>${veilig(klant.telefoon)}</span>
+    </a>
+  `;
+}
+
+const WA_ICOON = `
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+    <path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.3A10 10 0 1 0 12 2Zm0 2a8 8 0 1 1-4.1 14.9l-.4-.2-2.6.6.7-2.5-.2-.4A8 8 0 0 1 12 4Z"/>
+    <path d="M9.2 7.6c-.2-.4-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.4-.3.3-.9.9-.9 2.1s.9 2.4 1 2.6c.1.2 1.7 2.8 4.3 3.8 2.1.8 2.6.7 3 .6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0-.1-.2-.2-.5-.3l-1.7-.8c-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.3-.1-1.2-.4-2.2-1.4-.8-.7-1.4-1.6-1.5-1.8-.1-.2 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5 0-.2 0-.3 0-.5l-.7-1.6Z"/>
+  </svg>
+`;
 
 export function omzetBadge(omzet) {
   if (!omzet) {
     return `<span class="badge badge--neutraal">Omzet nog niet geregistreerd</span>`;
   }
-  if (!omzet.betaald) {
-    return `<span class="badge badge--open">${euro(omzet.bedragCent)} — niet betaald</span>`;
-  }
-  const hoe = omzet.methode === "cash" ? "cash" : "bank";
-  return `<span class="badge badge--ok">${euro(omzet.bedragCent)} — betaald (${hoe})</span>`;
+  const totaal = euro(omzetTotaal(omzet));
+  const aantal = (omzet.producten || []).length;
+  const producten = aantal
+    ? `<span class="badge badge--info" title="${aantal === 1 ? "1 product" : `${aantal} producten`} voor ${euro(productenTotaal(omzet))}">
+         + ${euro(productenTotaal(omzet))} product${aantal === 1 ? "" : "en"}
+       </span>`
+    : "";
+  const hoofd = omzet.betaald
+    ? `<span class="badge badge--ok">${totaal} — betaald (${omzet.methode === "cash" ? "cash" : "bank"})</span>`
+    : `<span class="badge badge--open">${totaal} — niet betaald</span>`;
+  return hoofd + producten;
 }
 
-/** Koppelt de knoppen Omzet / Verplaatsen / Verwijderen binnen een stuk HTML. */
-export function koppelKaartknoppen(wortel) {
-  wortel.querySelectorAll("[data-omzet]").forEach((knop) =>
-    knop.addEventListener("click", () => openOmzetDialoog(knop.dataset.omzet)),
-  );
-  wortel.querySelectorAll("[data-verplaats]").forEach((knop) =>
-    knop.addEventListener("click", () => openVerplaatsDialoog(knop.dataset.verplaats)),
-  );
-  wortel.querySelectorAll("[data-verwijder]").forEach((knop) =>
-    knop.addEventListener("click", () => vraagVerwijderen(knop.dataset.verwijder)),
-  );
+/**
+ * Maakt elke kaart met data-afspraak aanklikbaar. Klikken op de WhatsApp-knop
+ * telt niet als "kaart openen".
+ */
+export function koppelAfspraakKlik(wortel) {
+  wortel.querySelectorAll("[data-afspraak]").forEach((kaartEl) => {
+    kaartEl.addEventListener("click", (event) => {
+      if (event.target.closest("a, button")) return;
+      openAfspraakDetail(kaartEl.dataset.afspraak);
+    });
+    kaartEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      if (event.target.closest("a, button")) return;
+      event.preventDefault();
+      openAfspraakDetail(kaartEl.dataset.afspraak);
+    });
+  });
 }
 
 function vraagVerwijderen(id) {
   const afspraak = getAfspraak(id);
   if (!afspraak) return;
   const klant = getKlant(afspraak.klantId);
-  if (confirm(`Afspraak met ${klant ? klant.naam : "deze klant"} verwijderen?`)) {
+  const totaal = omzetTotaal(afspraak.omzet);
+  // De omzet hangt aan de afspraak, dus die verdwijnt mee uit je cijfers.
+  const waarschuwing = totaal
+    ? `\n\nLet op: de omzet van ${euro(totaal)} verdwijnt dan ook uit je dag- en maandcijfers.`
+    : "";
+  if (confirm(`Afspraak met ${klant ? klant.naam : "deze klant"} verwijderen?${waarschuwing}`)) {
     verwijderAfspraak(id);
     melding("Afspraak verwijderd");
   }
@@ -264,7 +299,7 @@ function tekenDag(inhoud, root) {
   });
 
   inhoud.querySelectorAll("[data-blok]").forEach((el) =>
-    el.addEventListener("click", () => openActieDialoog(el.dataset.blok)),
+    el.addEventListener("click", () => openAfspraakDetail(el.dataset.blok)),
   );
 }
 
@@ -320,7 +355,280 @@ function koppelDagKiezer(inhoud, root) {
   });
 }
 
-/* ------------------------------------------------------------- dialogen */
+/* ------------------------------------------------- het afspraakwerkscherm */
+
+/**
+ * Eén scherm voor een bestaande afspraak: omzet en betaling vastleggen en
+ * meteen een vervolgafspraak plannen. Verplaatsen en verwijderen zitten
+ * onderin.
+ */
+export function openAfspraakDetail(afspraakId) {
+  const dlg = document.getElementById("dlg-detail");
+  const form = document.getElementById("form-detail");
+  const afspraak = getAfspraak(afspraakId);
+  if (!afspraak) return;
+
+  const klant = getKlant(afspraak.klantId);
+  const betalingRij = document.getElementById("detail-betaling");
+  const vervolgAan = document.getElementById("detail-vervolg");
+  const vervolgVelden = document.getElementById("detail-vervolg-velden");
+
+  document.getElementById("detail-titel").textContent = klant ? klant.naam : "Afspraak";
+  document.getElementById("detail-context").textContent = [
+    `${dagLabel(datumVan(afspraak.start))} ${tijdvak(afspraak.start, afspraak.duurMin)}`,
+    afspraak.behandeling,
+    afspraak.locatie,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  document.getElementById("detail-contact").innerHTML = klant?.telefoon
+    ? whatsappKnop(klant)
+    : "";
+
+  // --- notities: deze afspraak, de klant, en wat er vorige keren stond
+  form.notitie.value = afspraak.notitie || "";
+  form.klantnotitie.value = klant?.notitie || "";
+
+  const vorige = vorigeNotities(afspraak.klantId, afspraak.start);
+  const vorigeVeld = document.getElementById("detail-vorige-veld");
+  vorigeVeld.hidden = vorige.length === 0;
+  document.getElementById("detail-vorige").innerHTML = vorige.length
+    ? `<ul class="notities">${vorige
+        .map(
+          (a) => `
+            <li>
+              <span class="notities__kop">${veilig(dagKort(datumVan(a.start)))}${a.behandeling ? ` · ${veilig(a.behandeling)}` : ""}</span>
+              <span>${veilig(a.notitie)}</span>
+            </li>`,
+        )
+        .join("")}</ul>`
+    : "";
+
+  // --- producten (losse verkopen bij deze afspraak)
+  let producten = (afspraak.omzet?.producten || []).map((p) => ({ ...p }));
+  const productenLijst = document.getElementById("detail-producten");
+  const productNaam = document.getElementById("detail-product-naam");
+  const productBedrag = document.getElementById("detail-product-bedrag");
+  const totaalHint = document.getElementById("detail-totaal");
+
+  const tekenProducten = () => {
+    productenLijst.innerHTML = producten.length
+      ? producten
+          .map(
+            (p, i) => `
+              <li class="product">
+                <span>${veilig(p.omschrijving)}</span>
+                <strong>${euro(p.bedragCent)}</strong>
+                <button type="button" class="knop knop--kaal knop--klein" data-product-weg="${i}"
+                  aria-label="${veilig(p.omschrijving)} verwijderen">✕</button>
+              </li>`,
+          )
+          .join("")
+      : "";
+    productenLijst.querySelectorAll("[data-product-weg]").forEach((knop) =>
+      knop.addEventListener("click", () => {
+        producten.splice(Number(knop.dataset.productWeg), 1);
+        tekenProducten();
+      }),
+    );
+    werkTotaalBij();
+  };
+
+  const werkTotaalBij = () => {
+    const behandeling = naarCent(form.bedrag.value) || 0;
+    const productenSom = producten.reduce((som, p) => som + p.bedragCent, 0);
+    totaalHint.textContent = productenSom
+      ? `Totaal: ${euro(behandeling + productenSom)} (behandeling ${euro(behandeling)} + producten ${euro(productenSom)})`
+      : "";
+  };
+
+  const voegProductToe = () => {
+    const omschrijving = productNaam.value.trim();
+    const bedragCent = naarCent(productBedrag.value);
+    if (!omschrijving || bedragCent === null || bedragCent <= 0) {
+      return toonFout(dlg, "Vul een product en een bedrag in, bijvoorbeeld Shampoo en 14,95.");
+    }
+    producten.push({ omschrijving, bedragCent });
+    productNaam.value = "";
+    productBedrag.value = "";
+    productNaam.focus();
+    tekenProducten();
+  };
+
+  document.getElementById("detail-product-toevoegen").onclick = voegProductToe;
+  // Enter in de productvelden voegt toe in plaats van het formulier te versturen.
+  [productNaam, productBedrag].forEach((veld) => {
+    veld.value = "";
+    veld.onkeydown = (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      voegProductToe();
+    };
+  });
+
+  // --- omzet en betaling
+  form.bedrag.oninput = werkTotaalBij;
+  form.bedrag.value = afspraak.omzet
+    ? (afspraak.omzet.bedragCent / 100).toFixed(2).replace(".", ",")
+    : "";
+  // Eén tik: nog niet betaald, cash of bank.
+  let betaling = afspraak.omzet?.betaald ? afspraak.omzet.methode || "bank" : "open";
+  const tekenBetaling = () => {
+    betalingRij.querySelectorAll("[data-betaling]").forEach((knop) => {
+      const actief = knop.dataset.betaling === betaling;
+      knop.classList.toggle("keuzeknop--actief", actief);
+      knop.classList.toggle(`keuzeknop--${knop.dataset.betaling}`, actief);
+      knop.setAttribute("aria-checked", String(actief));
+    });
+  };
+  betalingRij.querySelectorAll("[data-betaling]").forEach((knop) => {
+    knop.onclick = () => {
+      betaling = knop.dataset.betaling;
+      tekenBetaling();
+    };
+  });
+  tekenBetaling();
+  tekenProducten();
+
+  // --- vervolgafspraak
+  vervolgAan.checked = false;
+  vervolgVelden.hidden = true;
+  form.datum.value = "";
+  form.tijd.value = tijdVan(afspraak.start);
+  form.duurMin.value = String(afspraak.duurMin || 60);
+
+  const toonRuimte = () => {
+    if (!form.datum.value) {
+      document.getElementById("detail-dagoverzicht").textContent = "";
+      document.getElementById("detail-slots").hidden = true;
+      return;
+    }
+    werkRuimteBij({
+      datum: form.datum.value,
+      duurMin: Number(form.duurMin.value),
+      overzichtEl: document.getElementById("detail-dagoverzicht"),
+      slotsEl: document.getElementById("detail-slots"),
+      rijEl: document.getElementById("detail-slots-rij"),
+      kiesTijd: (gekozen) => {
+        form.tijd.value = gekozen;
+      },
+    });
+  };
+
+  // Weken-knopjes: zelfde dag van de week, zelfde tijd, n weken later.
+  const wekenRij = document.getElementById("detail-weken");
+  wekenRij.innerHTML = VERVOLG_WEKEN.map(
+    (w) => `<button type="button" class="slot" data-weken="${w}">${w} wk</button>`,
+  ).join("");
+  wekenRij.querySelectorAll("[data-weken]").forEach((knop) =>
+    knop.addEventListener("click", () => {
+      const d = new Date(`${datumVan(afspraak.start)}T12:00`);
+      d.setDate(d.getDate() + Number(knop.dataset.weken) * 7);
+      form.datum.value = naarISODatum(d);
+      wekenRij.querySelectorAll("[data-weken]").forEach((k) => k.classList.remove("slot--actief"));
+      knop.classList.add("slot--actief");
+      toonRuimte();
+    }),
+  );
+
+  vervolgAan.onchange = () => {
+    vervolgVelden.hidden = !vervolgAan.checked;
+    if (vervolgAan.checked && !form.datum.value) {
+      // Standaard zes weken later; dat is het meest gekozen ritme.
+      wekenRij.querySelector('[data-weken="6"]')?.click();
+    }
+  };
+  form.datum.onchange = toonRuimte;
+  form.duurMin.onchange = toonRuimte;
+
+  // --- onderin: verplaatsen en verwijderen
+  dlg.querySelector("[data-detail-verplaats]").onclick = () => {
+    dlg.close();
+    openVerplaatsDialoog(afspraak.id);
+  };
+  dlg.querySelector("[data-detail-verwijder]").onclick = () => {
+    dlg.close();
+    vraagVerwijderen(afspraak.id);
+  };
+
+  let bevestigd = "";
+  form.onsubmit = (event) => {
+    event.preventDefault();
+    const gedaan = [];
+
+    // Omzet is optioneel: een lege afspraak in de toekomst hoeft nog niets.
+    const bedragIngevuld = form.bedrag.value.trim() !== "";
+    const betaald = betaling !== "open";
+    const methode = betaald ? betaling : null;
+
+    if (betaald && !bedragIngevuld && producten.length === 0) {
+      return toonFout(dlg, "Vul het bedrag in dat betaald is.");
+    }
+    if (bedragIngevuld || producten.length) {
+      const bedragCent = bedragIngevuld ? naarCent(form.bedrag.value) : 0;
+      if (bedragCent === null || (bedragIngevuld && bedragCent <= 0)) {
+        return toonFout(dlg, "Vul een bedrag in, bijvoorbeeld 45,00.");
+      }
+      if (betaald && !methode) {
+        return toonFout(dlg, "Geef aan of er via bank of cash betaald is.");
+      }
+      zetOmzet(afspraak.id, { bedragCent, producten, betaald, methode });
+      gedaan.push(
+        producten.length
+          ? `omzet opgeslagen (incl. ${producten.length} product${producten.length === 1 ? "" : "en"})`
+          : "omzet opgeslagen",
+      );
+    }
+
+    if (vervolgAan.checked) {
+      if (!form.datum.value || !form.tijd.value) {
+        return toonFout(dlg, "Kies een datum en tijd voor de vervolgafspraak.");
+      }
+      const sleutel = `${form.datum.value}T${form.tijd.value}-${form.duurMin.value}`;
+      const botsing = overlapMet({
+        datum: form.datum.value,
+        tijd: form.tijd.value,
+        duurMin: Number(form.duurMin.value),
+      });
+      if (botsing.length && bevestigd !== sleutel) {
+        bevestigd = sleutel;
+        return toonFout(dlg, `${botsingTekst(botsing)} Klik nogmaals op Opslaan om het tóch in te plannen.`);
+      }
+      const vervolg = voegAfspraakToe({
+        klantId: afspraak.klantId,
+        start: `${form.datum.value}T${form.tijd.value}`,
+        duurMin: Number(form.duurMin.value),
+        behandeling: afspraak.behandeling,
+        locatie: afspraak.locatie,
+      });
+      agendaDatum = datumVan(vervolg.start);
+      gedaan.push(`vervolgafspraak op ${dagLabel(datumVan(vervolg.start))} ${tijdVan(vervolg.start)}`);
+    }
+
+    // Notities worden altijd meegenomen, ook als er verder niets verandert.
+    const nieuweNotitie = form.notitie.value.trim();
+    const nieuweKlantnotitie = form.klantnotitie.value.trim();
+    if (nieuweNotitie !== (afspraak.notitie || "")) {
+      wijzigAfspraak(afspraak.id, { notitie: nieuweNotitie });
+      gedaan.push("notitie opgeslagen");
+    }
+    if (klant && nieuweKlantnotitie !== (klant.notitie || "")) {
+      wijzigKlant(klant.id, { notitie: nieuweKlantnotitie });
+      if (!gedaan.includes("notitie opgeslagen")) gedaan.push("klantnotitie opgeslagen");
+    }
+
+    dlg.close();
+    melding(gedaan.length ? hoofdletter(gedaan.join(" · ")) : "Niets gewijzigd");
+  };
+
+  openDialoog(dlg);
+}
+
+function hoofdletter(tekst) {
+  return tekst.charAt(0).toUpperCase() + tekst.slice(1);
+}
+
+/* --------------------------------------------------- plannen en verplaatsen */
 
 /** Nieuwe afspraak inplannen, eventueel met een tijdstip uit de agenda. */
 export function openAfspraakDialoog({ datum = vandaagISO(), tijd = "10:00" } = {}) {
@@ -442,81 +750,6 @@ function vulKlantKeuze(select, geselecteerd) {
   if (huidig && klanten.some((k) => k.id === huidig)) select.value = huidig;
 }
 
-/** Klein keuzemenu bij het tikken op een blok in de dagagenda. */
-export function openActieDialoog(afspraakId) {
-  const dlg = document.getElementById("dlg-acties");
-  const afspraak = getAfspraak(afspraakId);
-  if (!afspraak) return;
-  const klant = getKlant(afspraak.klantId);
-
-  document.getElementById("acties-titel").textContent = klant ? klant.naam : "Afspraak";
-  document.getElementById("acties-context").textContent = [
-    tijdvak(afspraak.start, afspraak.duurMin),
-    afspraak.behandeling,
-    afspraak.locatie,
-    klant?.telefoon,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  dlg.querySelectorAll("[data-actie]").forEach((knop) => {
-    knop.onclick = () => {
-      dlg.close();
-      if (knop.dataset.actie === "omzet") openOmzetDialoog(afspraak.id);
-      if (knop.dataset.actie === "verplaats") openVerplaatsDialoog(afspraak.id);
-      if (knop.dataset.actie === "verwijder") vraagVerwijderen(afspraak.id);
-    };
-  });
-
-  openDialoog(dlg);
-}
-
-/** Omzet vastleggen of corrigeren. */
-export function openOmzetDialoog(afspraakId) {
-  const dlg = document.getElementById("dlg-omzet");
-  const form = document.getElementById("form-omzet");
-  const afspraak = getAfspraak(afspraakId);
-  if (!afspraak) return;
-
-  const klant = getKlant(afspraak.klantId);
-  const methodeVeld = document.getElementById("omzet-methode-veld");
-
-  document.getElementById("omzet-context").textContent =
-    `${klant ? klant.naam : "Afspraak"} — ${dagLabel(datumVan(afspraak.start))} ${tijdVan(afspraak.start)}`;
-
-  form.bedrag.value = afspraak.omzet
-    ? (afspraak.omzet.bedragCent / 100).toFixed(2).replace(".", ",")
-    : "";
-  form.betaald.checked = Boolean(afspraak.omzet?.betaald);
-  methodeVeld.disabled = !form.betaald.checked;
-  [...form.methode].forEach((radio) => {
-    radio.checked = radio.value === afspraak.omzet?.methode;
-  });
-
-  // De betaalwijze is pas relevant zodra er daadwerkelijk betaald is.
-  form.betaald.onchange = () => {
-    methodeVeld.disabled = !form.betaald.checked;
-  };
-
-  form.onsubmit = (event) => {
-    event.preventDefault();
-    const bedragCent = naarCent(form.bedrag.value);
-    if (bedragCent === null || bedragCent <= 0) {
-      return toonFout(dlg, "Vul een bedrag in, bijvoorbeeld 45,00.");
-    }
-    const betaald = form.betaald.checked;
-    const methode = [...form.methode].find((r) => r.checked)?.value || null;
-    if (betaald && !methode) {
-      return toonFout(dlg, "Geef aan of er via bank of cash betaald is.");
-    }
-    zetOmzet(afspraak.id, { bedragCent, betaald, methode });
-    dlg.close();
-    melding("Omzet opgeslagen");
-  };
-
-  openDialoog(dlg);
-}
-
 /** Afspraak naar een andere datum of tijd zetten. */
 export function openVerplaatsDialoog(afspraakId) {
   const dlg = document.getElementById("dlg-verplaats");
@@ -531,6 +764,25 @@ export function openVerplaatsDialoog(afspraakId) {
   form.datum.value = datumVan(afspraak.start);
   form.tijd.value = tijdVan(afspraak.start);
 
+  // De omzet hangt aan de afspraak en verhuist dus mee naar de nieuwe dag.
+  const gevolgen = document.getElementById("verplaats-gevolgen");
+  const toonGevolgen = () => {
+    const regels = [];
+    const totaal = omzetTotaal(afspraak.omzet);
+    const oudeDatum = datumVan(afspraak.start);
+    if (totaal && form.datum.value !== oudeDatum) {
+      regels.push(`De omzet van ${euro(totaal)} telt daarna mee op de nieuwe dag.`);
+    }
+    if (getAfsluiting(oudeDatum)) {
+      regels.push(`${hoofdletter(dagLabel(oudeDatum))} is al afgesloten; die afsluiting klopt daarna niet meer.`);
+    }
+    if (form.datum.value !== oudeDatum && getAfsluiting(form.datum.value)) {
+      regels.push(`${hoofdletter(dagLabel(form.datum.value))} is al afgesloten; werk die afsluiting daarna bij.`);
+    }
+    gevolgen.textContent = regels.join(" ");
+    gevolgen.hidden = regels.length === 0;
+  };
+
   const toonRuimte = () =>
     werkRuimteBij({
       datum: form.datum.value,
@@ -543,7 +795,10 @@ export function openVerplaatsDialoog(afspraakId) {
         form.tijd.value = gekozen;
       },
     });
-  form.datum.onchange = toonRuimte;
+  form.datum.onchange = () => {
+    toonRuimte();
+    toonGevolgen();
+  };
 
   let bevestigd = "";
   form.onsubmit = (event) => {
@@ -572,4 +827,5 @@ export function openVerplaatsDialoog(afspraakId) {
 
   openDialoog(dlg);
   toonRuimte();
+  toonGevolgen();
 }
