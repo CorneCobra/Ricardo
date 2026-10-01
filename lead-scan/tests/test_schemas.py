@@ -61,4 +61,4 @@ def test_pii_violations():
     assert pii_violations(enriched(opening_line="Bel ons op 06-12345678 voor meer info graag"))
     bad = enriched(claims=[{"claim": "x", "source_url": "https://www.linkedin.com/in/jan"}])
     assert pii_violations(bad)
-    assert pii_violations(enriched(kvk_number="01169476")) == []  # KvK is geen telefoonnummer
+    assert pii_violations(enriched(kvk_number="01234567")) == []  # KvK is geen telefoonnummer

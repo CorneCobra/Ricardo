@@ -45,3 +45,29 @@ def test_weekly_text_numbers_and_top5():
     assert "2 nieuwe leads" in t and "tegengehouden 9" in t
     assert "5. Org 4" in t and "Org 5" not in t
     assert "https://x/run" in t and "let op" in t
+
+
+class FakeUploadClient(FakeWebClient):
+    def __init__(self):
+        super().__init__()
+        self.uploads = []
+
+    def conversations_list(self, **kw):
+        return {"channels": [{"name": "claude-leads", "id": "C0123ABCD"}], "response_metadata": {"next_cursor": ""}}
+
+    def files_upload_v2(self, **kw):
+        self.uploads.append(kw)
+
+
+def test_upload_resolves_channel_name_to_id():
+    web = FakeUploadClient()
+    Notifier("xoxb", "#claude-leads", client=web).upload("r.md", "# rapport", "Rapport", "toelichting")
+    assert web.uploads[0]["channel"] == "C0123ABCD" and web.uploads[0]["content"] == "# rapport"
+
+
+def test_upload_with_channel_id_and_disabled_slack():
+    web = FakeUploadClient()
+    Notifier("xoxb", "C0999XYZ1", client=web).upload("r.md", "x", "t", "c")
+    assert web.uploads[0]["channel"] == "C0999XYZ1"
+    Notifier("xoxb", "#claude-leads", dry_run=True, client=web).upload("r.md", "x", "t", "c")
+    assert len(web.uploads) == 1

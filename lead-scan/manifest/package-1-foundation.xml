@@ -7,14 +7,8 @@
         <name>CustomObject</name>
     </types>
     <types>
-        <members>Lead.Chamber_of_Commerce_Number__c</members>
-        <members>Lead.Scan_ICP_Version__c</members>
-        <members>Lead.Scan_Opening_Line__c</members>
-        <members>Lead.Scan_Run__c</members>
         <members>Lead.Scan_Score__c</members>
         <members>Lead.Scan_Segment__c</members>
-        <members>Lead.Scan_Signal__c</members>
-        <members>Lead.Scan_Sources__c</members>
         <members>Lead_Scan_Setting__mdt.Exploration_Share__c</members>
         <members>Lead_Scan_Setting__mdt.Kill_Switch__c</members>
         <members>Lead_Scan_Setting__mdt.Learning_Enabled__c</members>

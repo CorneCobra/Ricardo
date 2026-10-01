@@ -43,8 +43,10 @@ def _soql_quote(value: str) -> str:
 
 
 class SalesforceClient:
-    def __init__(self, sf: Salesforce):
+    def __init__(self, sf: Salesforce, username: str | None = None):
         self.sf = sf
+        self.username = username
+        self._user_id: str | None = None
 
     @classmethod
     def login(cls, env: config.Env) -> "SalesforceClient":
@@ -54,7 +56,7 @@ class SalesforceClient:
             privatekey=env.sf_private_key,
             domain=env.sf_domain,
         )
-        return cls(sf)
+        return cls(sf, env.sf_username)
 
     @property
     def instance_url(self) -> str:
@@ -94,15 +96,34 @@ class SalesforceClient:
 
     def get_run(self, run_key: str) -> dict | None:
         records = self.query_all(
-            "SELECT Id, Status__c, Leads_Created__c FROM Scan_Run__c "
+            "SELECT Id, Status__c, Started__c, Finished__c, Leads_Created__c FROM Scan_Run__c "
             f"WHERE Run_Key__c = '{_soql_quote(run_key)}' LIMIT 1"
         )
         return records[0] if records else None
 
-    def leads_of_run(self, run_id: str) -> list[dict]:
-        return self.query_all(
-            f"SELECT Id, Company, Website FROM Lead WHERE Scan_Run__c = '{_soql_quote(run_id)}'"
+    def user_id(self) -> str:
+        """Id van de integratiegebruiker; alle scan-leads zijn door deze gebruiker aangemaakt."""
+        if self._user_id is None:
+            records = self.query_all(f"SELECT Id FROM User WHERE Username = '{_soql_quote(self.username or '')}'")
+            if not records:
+                raise RuntimeError("Integratiegebruiker niet gevonden")
+            self._user_id = records[0]["Id"]
+        return self._user_id
+
+    def scan_leads_between(self, started: str, finished: str | None = None) -> list[dict]:
+        """Scan-leads van één run: LeadSource + integratiegebruiker + aanmaakmoment binnen de run.
+
+        Er is bewust geen lookup naar Scan_Run__c op Lead; dit filter vervangt die.
+        `started` en `finished` zijn Salesforce-datetimes (bv. 2026-10-04T20:07:00Z).
+        """
+        soql = (
+            "SELECT Id, Company, Website, CreatedDate FROM Lead "
+            f"WHERE LeadSource = '{_soql_quote(config.LEAD_SOURCE)}' AND CreatedById = '{self.user_id()}' "
+            f"AND CreatedDate >= {started}"
         )
+        if finished:
+            soql += f" AND CreatedDate <= {finished}"
+        return self.query_all(soql)
 
     # ---- schrijven ---------------------------------------------------------
 

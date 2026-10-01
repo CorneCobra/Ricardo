@@ -108,13 +108,13 @@ def normalize_kvk(value: str | None) -> str | None:
 
 
 def normalize_name(value: str | None) -> str:
-    """'Stichting De Zonnebloem B.V.' -> 'zonnebloem'."""
+    """'Stichting De Zilvermeeuw B.V.' -> 'zilvermeeuw'."""
     if not value:
         return ""
     s = unicodedata.normalize("NFKD", value)
     s = "".join(c for c in s if not unicodedata.combining(c)).lower()
     s = s.replace("&", " en ").replace(".", "")
-    s = re.sub(r"\([^)]*\)", " ", s)  # toevoegingen tussen haakjes, bv. '(KiKa)'
+    s = re.sub(r"\([^)]*\)", " ", s)  # toevoegingen tussen haakjes, bv. '(KiZZ)'
     s = re.sub(r"[^a-z0-9]+", " ", s)
     tokens = [t for t in s.split() if t not in _NAME_STOPWORDS]
     return " ".join(tokens)
@@ -123,8 +123,8 @@ def normalize_name(value: str | None) -> str:
 def name_keys(value: str | None) -> set[str]:
     """Alle naamsleutels van een record: de volledige naam plus aliassen.
 
-    'Stichting Kinderen Kankervrij (KiKa)' -> {'kinderen kankervrij', 'kika'}
-    'Regio College / Talland'              -> {'regio college talland', 'regio college', 'talland'}
+    'Stichting Kinderen Zonder Zorgen (KiZZ)' -> {'kinderen zonder zorgen', 'kizz'}
+    'Regio Leerhuis / Duinhorst'              -> {'regio leerhuis duinhorst', 'regio leerhuis', 'duinhorst'}
     """
     if not value:
         return set()
@@ -132,12 +132,13 @@ def name_keys(value: str | None) -> set[str]:
     parts = re.findall(r"\(([^)]*)\)", value)
     parts += re.split(r"\s*/\s*", re.sub(r"\([^)]*\)", " ", value)) if "/" in value else []
     keys |= {normalize_name(p) for p in parts}
-    # Twee tekens is genoeg voor een exacte sleutel (CZ, iO, EO); losse letters niet.
+    # Twee tekens is genoeg voor een exacte sleutel (organisaties met een naam van twee letters);
+    # losse letters niet.
     return {k for k in keys if len(k) >= 2}
 
 
 def domain_fits_name(domain: str, name: str) -> bool:
-    """Past een domein bij een organisatienaam? 'apollovredestein.com' ~ 'Apollo Vredestein'."""
+    """Past een domein bij een organisatienaam? 'bandenfabriekveluwe.com' ~ 'Banden Fabriek Veluwe'."""
     label = domain.split(".")[0].replace("-", "")
     if len(label) < 2:
         return False
@@ -146,7 +147,7 @@ def domain_fits_name(domain: str, name: str) -> bool:
         initials = "".join(t[0] for t in key.split())
         if label == compact or (len(initials) >= 2 and label == initials):
             return True
-        if len(label) >= 3 and compact.startswith(label):  # 'kwf' ~ 'KWF Kankerbestrijding'
+        if len(label) >= 3 and compact.startswith(label):  # 'zvf' ~ 'ZVF Zeevogelfonds'
             return True
         if (len(compact) >= 4 and compact in label) or (len(label) >= 4 and label in compact):
             return True
@@ -161,7 +162,7 @@ def name_similarity(a: str, b: str) -> float:
         return 1.0
     ta, tb = set(a.split()), set(b.split())
     short, long_ = (ta, tb) if len(ta) <= len(tb) else (tb, ta)
-    # 'landstede' in 'landstede vo', maar niet op korte, nietszeggende woorden.
+    # 'duinhorst' in 'duinhorst vo', maar niet op korte, nietszeggende woorden.
     if short and short <= long_ and (len(short) >= 2 or len(next(iter(short))) >= 4):
         return 0.9
     matcher = SequenceMatcher(None, a, b)

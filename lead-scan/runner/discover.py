@@ -31,6 +31,7 @@ Opdracht:
   het segment past: een vacature waarin CRM/Salesforce/klantcontact genoemd wordt,
   een fusie, reorganisatie, aanbesteding (TenderNed), snelle groei of een
   vergelijkbare organisatie als een bestaande klant (lookalike).
+{signal_rule}
 - Alleen signalen van de afgelopen 6 maanden. Alleen organisaties met
   aanwezigheid in Nederland of België.
 - Kwaliteit boven aantal: lever maximaal {max_candidates} kandidaten, alleen als
@@ -65,6 +66,12 @@ def discover(client, segment: config.Segment, searches: int, deadline: config.De
             max_candidates=config.MAX_CANDIDATES_PER_SEGMENT,
             searches=searches,
             segment_id=segment.id,
+            signal_rule=(
+                f"- Dit segment zoekt alleen signalen van het type {segment.signal_type}; "
+                f"signal_type is dus altijd \"{segment.signal_type}\"."
+                if segment.signal_type
+                else ""
+            ),
         ),
         submit_name="submit_candidates",
         submit_description="Lever de gevonden kandidaten aan. Een lege lijst is toegestaan.",
@@ -81,6 +88,9 @@ def discover(client, segment: config.Segment, searches: int, deadline: config.De
     for item in result.data["candidates"][: config.MAX_CANDIDATES_PER_SEGMENT]:
         item["segment_id"] = segment.id  # nooit vertrouwen op wat het model invult
         problems = validate(item, CANDIDATE_SCHEMA) + pii_violations(item)
+        # Het signaaltype staat niet op Lead; het leren per signaal loopt via het segment.
+        if segment.signal_type and item.get("signal_type") != segment.signal_type:
+            problems.append(f"signaaltype {item.get('signal_type')} hoort niet bij dit segment ({segment.signal_type})")
         if problems:
             notes.append(f"Kandidaat {item.get('company_name')!r} verworpen: {'; '.join(problems)}")
             continue

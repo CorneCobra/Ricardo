@@ -1,0 +1,124 @@
+{
+  "run_key": "2026-W41",
+  "dry_run": false,
+  "model": "claude-opus-5-5",
+  "icp_version": "v1-concept",
+  "started": "2026-10-04T22:00:00+02:00",
+  "finished": "2026-10-05T02:00:00+02:00",
+  "stats": {
+    "Candidates_Found__c": 5,
+    "Blocked_Layer_1__c": 1,
+    "Blocked_Layer_2__c": 1,
+    "Blocked_Layer_3__c": 0,
+    "Blocked_Layer_4__c": 0,
+    "Below_Threshold__c": 0,
+    "Signals_To_Existing__c": 1,
+    "Leads_Created__c": 1
+  },
+  "segment_budget": {
+    "Nonprofit vacatures": 60
+  },
+  "warnings": [
+    "Maximale looptijd bereikt tijdens onderzoek"
+  ],
+  "candidates": [
+    {
+      "company_name": "Nieuw Fonds",
+      "domain": "nieuwfonds.nl",
+      "segment": "Nonprofit vacatures",
+      "signal_type": "Vacancy",
+      "signal_summary": "Nieuw Fonds zoekt een CRM-beheerder",
+      "source_urls": [
+        "https://nieuwfonds.nl/vacature"
+      ],
+      "result": "lead aangemaakt",
+      "steps": [],
+      "research": {
+        "company_name": "Nieuw Fonds",
+        "domain": "nieuwfonds.nl",
+        "kvk_number": null,
+        "industry": "Nonprofit",
+        "sub_industry": "Fondsenwervers",
+        "employees_estimate": 120,
+        "city": "Utrecht",
+        "country": "Nederland",
+        "current_crm": "Overig",
+        "current_sf_partner": null,
+        "why_now": "Vacature voor CRM-functioneel beheerder geplaatst in september.",
+        "project_estimate": "Vervanging van het huidige donateursysteem door Salesforce NPC.",
+        "contact_role": "Manager Fondsenwerving",
+        "opening_line": "Ik zag dat jullie een CRM-functioneel beheerder zoeken.",
+        "score": 88,
+        "score_rationale": "Kernbranche, passende grootte, recent CRM-signaal.",
+        "claims": [
+          {
+            "claim": "vacature",
+            "source_url": "https://nieuwfonds.nl/vacature"
+          }
+        ]
+      },
+      "lead_id": "00Q0"
+    },
+    {
+      "company_name": "Tweede Fonds",
+      "domain": "tweedefonds.nl",
+      "segment": "Nonprofit vacatures",
+      "signal_type": "Vacancy",
+      "signal_summary": "Tweede Fonds zoekt een CRM-beheerder",
+      "source_urls": [
+        "https://tweedefonds.nl/vacature"
+      ],
+      "result": "in behandeling",
+      "steps": [],
+      "research": null,
+      "lead_id": null
+    },
+    {
+      "company_name": "De Zonnebloem",
+      "domain": "zonnebloem.nl",
+      "segment": "Nonprofit vacatures",
+      "signal_type": "Vacancy",
+      "signal_summary": "De Zonnebloem zoekt een CRM-beheerder",
+      "source_urls": [
+        "https://zonnebloem.nl/vacature"
+      ],
+      "result": "laag 1: uitgesloten",
+      "steps": [
+        "L1 tegengehouden: domain=zonnebloem.nl -> Account Stichting De Zonnebloem [001K] (Account Type Customer)"
+      ],
+      "research": null,
+      "lead_id": null
+    },
+    {
+      "company_name": "Realiance",
+      "domain": "realiance.nl",
+      "segment": "Nonprofit vacatures",
+      "signal_type": "Vacancy",
+      "signal_summary": "Realiance zoekt een CRM-beheerder",
+      "source_urls": [
+        "https://realiance.nl/vacature"
+      ],
+      "result": "laag 2: bestaand record",
+      "steps": [
+        "L2 tegengehouden: domain=realiance.nl -> Account Realiance [001P]",
+        "Task aangemaakt voor de eigenaar: Leadscan: signaal (Vacancy) bij Realiance"
+      ],
+      "research": null,
+      "lead_id": null
+    },
+    {
+      "company_name": "Laag Fonds",
+      "domain": "laagfonds.nl",
+      "segment": "Nonprofit vacatures",
+      "signal_type": "Vacancy",
+      "signal_summary": "Laag Fonds zoekt een CRM-beheerder",
+      "source_urls": [
+        "https://laagfonds.nl/vacature"
+      ],
+      "result": "in behandeling",
+      "steps": [],
+      "research": null,
+      "lead_id": null
+    }
+  ]
+}

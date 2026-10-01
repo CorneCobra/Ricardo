@@ -9,9 +9,10 @@ website, alleen het e-maildomein, een andere rechtsvorm) en door laag 1-3
 gestuurd. Zonder --with-claude telt een twijfelgeval (laag 3) als
 tegengehouden, net als 'bij twijfel valt af' in de echte run.
 
-    python -m runner.golden tests/golden_set.json [--with-claude]
+    python -m runner.golden tests/golden_set.json [--with-claude] [--no-slack]
 
-Exitcode 1 zodra één geval anders uitvalt dan verwacht.
+Exitcode 1 zodra één geval anders uitvalt dan verwacht. De logs bevatten alleen
+geval-Id's en uitkomsten; namen en redenen staan in het rapport (out/ en Slack).
 """
 
 from __future__ import annotations
@@ -21,11 +22,15 @@ import json
 import logging
 import sys
 
+from pathlib import Path
+
 from . import config, exclusion, review_doubt
+from .main import REPORT_DIR, configure_logging
 from .matching import MatchIndex, email_domain, normalize_domain, normalize_kvk
 from .salesforce import SalesforceClient, _soql_quote
+from .slack import Notifier
 
-log = logging.getLogger("golden")
+log = logging.getLogger("leadscan.golden")
 
 NONSENSE_NAME = "Qwzx Onbestaande Testorganisatie"
 
@@ -105,12 +110,31 @@ def evaluate(index: MatchIndex, cases: list[dict], fetch, claude=None) -> list[d
     return results
 
 
+def report_markdown(results: list[dict], with_claude: bool) -> str:
+    failed = [r for r in results if not r["ok"]]
+    lines = [
+        f"# Gouden testset dubbelcheck: {len(results) - len(failed)}/{len(results)} geslaagd",
+        f"Laag 3: {'Claude' if with_claude else 'conservatief (twijfel = tegengehouden)'}",
+        "",
+        "| | Geval | Variant | Verwacht | Uitkomst | Kandidaat | Reden |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for r in sorted(results, key=lambda r: r["ok"]):
+        cand = r.get("candidate") or {}
+        who = f"{cand.get('company_name', '')} / {cand.get('domain') or '–'} / {cand.get('kvk_number') or '–'}"
+        reason = (r.get("reason") or "").replace("|", "/")
+        lines.append(f"| {'✅' if r['ok'] else '❌'} | {r['id']} | {r['variant']} | {r['expected']} | "
+                     f"{r['outcome']} | {who} | {reason} |")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Gouden testset door de dubbelcheck")
     parser.add_argument("path")
     parser.add_argument("--with-claude", action="store_true", help="twijfelgevallen echt door laag 3 (Claude)")
+    parser.add_argument("--no-slack", action="store_true", help="rapport niet naar Slack sturen")
     args = parser.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    configure_logging()
 
     env = config.Env.load()
     sf = SalesforceClient.login(env)
@@ -125,10 +149,19 @@ def main(argv: list[str] | None = None) -> int:
 
     failed = [r for r in results if not r["ok"]]
     for r in results:
-        mark = "OK  " if r["ok"] else "FOUT"
-        log.info("%s %-28s %-12s verwacht %-7s -> %-16s %s", mark, r["id"], r["variant"], r["expected"],
-                 r["outcome"], r.get("reason", ""))
+        # Alleen Id's en uitkomsten: de logs van een publieke repository zijn openbaar.
+        log.info("%s %-28s %-12s verwacht %-7s -> %s", "OK  " if r["ok"] else "FOUT", r["id"], r["variant"],
+                 r["expected"], r["outcome"])
     log.info("%d/%d geslaagd", len(results) - len(failed), len(results))
+
+    markdown = report_markdown(results, args.with_claude)
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    Path(REPORT_DIR / "golden-set.md").write_text(markdown, encoding="utf-8")
+    Notifier(env.slack_token, env.slack_channel, dry_run=args.no_slack).upload(
+        "golden-set.md", markdown, "Gouden testset dubbelcheck",
+        f"Gouden testset: {len(results) - len(failed)}/{len(results)} geslaagd"
+        + (" :white_check_mark:" if not failed else " :x: (harde poort niet gehaald)"),
+    )
     return 1 if failed else 0
 
 

@@ -31,7 +31,8 @@ class FakeSF:
     def get_run(self, key):
         return self.run
 
-    def leads_of_run(self, run_id):
+    def scan_leads_between(self, started, finished=None):
+        self.lead_window = (started, finished)
         return [{"Id": "00Q_old"}]
 
     def upsert_run(self, key, fields):
@@ -85,8 +86,8 @@ def cand(name, domain):
 CANDIDATES = [
     cand("Nieuw Fonds", "nieuwfonds.nl"),
     cand("Tweede Fonds", "tweedefonds.nl"),
-    cand("De Zonnebloem", "zonnebloem.nl"),  # klant -> laag 1
-    cand("Realiance", "realiance.nl"),  # prospect -> laag 2 + Task
+    cand("De Zilvermeeuw", "zilvermeeuw.nl"),  # klant -> laag 1
+    cand("Vastgoedpartners Oost", "vastgoedpartnersoost.nl"),  # prospect -> laag 2 + Task
     cand("Laag Fonds", "laagfonds.nl"),  # onder drempel
 ]
 SCORES = {"Nieuw Fonds": 88, "Tweede Fonds": 75, "Laag Fonds": 40}
@@ -107,10 +108,12 @@ def handler(kwargs):
     raise AssertionError(names)
 
 
+# Fictieve organisaties.
 ACCOUNTS = [
-    {"Id": "001K", "Name": "Stichting De Zonnebloem", "Type": "Customer", "Website": "https://www.zonnebloem.nl/",
+    {"Id": "001K", "Name": "Stichting De Zilvermeeuw", "Type": "Customer", "Website": "https://www.zilvermeeuw.nl/",
      "OwnerId": "005A"},
-    {"Id": "001P", "Name": "Realiance", "Type": "Prospect", "Website": "https://realiance.nl/", "OwnerId": "005B"},
+    {"Id": "001P", "Name": "Vastgoedpartners Oost", "Type": "Prospect", "Website": "https://vastgoedpartnersoost.nl/",
+     "OwnerId": "005B"},
 ]
 
 
@@ -121,7 +124,7 @@ def ok_verifier(lead, cand, seen):
 def pipeline(sf, claude=None, **kw):
     notifier = FakeNotifier()
     p = Pipeline(sf, claude or FakeClaude(handler=handler), notifier, run_key="2026-W41", clock=lambda: NOW,
-                 verifier=kw.pop("verifier", ok_verifier), **kw)
+                 verifier=kw.pop("verifier", ok_verifier), report_dir=kw.pop("report_dir", None), **kw)
     return p, notifier
 
 
@@ -130,8 +133,11 @@ def test_full_run_writes_qualified_leads_and_tasks():
     p, notifier = pipeline(sf, scheduled=True)
     assert p.run() == 0
     assert [r["Company"] for r in sf.inserted] == ["Nieuw Fonds", "Tweede Fonds"]  # gesorteerd op score
-    assert all(r["OwnerId"] == "00GQ" and r["Scan_Run__c"] == "a0R1" for r in sf.inserted)
+    assert all(r["OwnerId"] == "00GQ" for r in sf.inserted)
     assert all(r["Scan_Segment__c"] == "SEG1" for r in sf.inserted)  # nooit het model vertrouwen
+    # Nieuw op Lead zijn alleen Scan_Score__c en Scan_Segment__c.
+    assert all({k for k in r if k.startswith("Scan_")} == {"Scan_Score__c", "Scan_Segment__c"} for r in sf.inserted)
+    assert "run 2026-W41" in sf.inserted[0]["Description"]
     assert len(sf.tasks) == 1 and sf.tasks[0]["WhatId"] == "001P"
     final = sf.upserts[-1]
     assert final["Status__c"] == "Completed"
@@ -142,6 +148,12 @@ def test_full_run_writes_qualified_leads_and_tasks():
     assert sf.segment_updates and sf.segment_updates[0][0] == "SEG1"
     assert notifier.weekly_calls[0]["schedule"] is True
     assert [lead["company_name"] for lead in notifier.weekly_calls[0]["top"]] == ["Nieuw Fonds", "Tweede Fonds"]
+    # Runrapport: elke kandidaat met zijn uitkomst, als bestand naar Slack.
+    report = notifier.uploads[0]["content"]
+    assert "Nieuw Fonds (nieuwfonds.nl) — lead aangemaakt" in report
+    assert "De Zilvermeeuw (zilvermeeuw.nl) — laag 1: uitgesloten" in report
+    assert "Laag Fonds (laagfonds.nl) — onder drempel" in report
+    assert "Task aangemaakt" in report
 
 
 def test_max_leads_per_run_is_enforced():
@@ -193,19 +205,26 @@ def test_completed_run_is_not_repeated():
 
 
 def test_resumed_run_counts_existing_leads_toward_maximum():
-    sf = FakeSF(settings=Settings(max_leads_per_run=2), run={"Id": "a0R1", "Status__c": "Failed"}, accounts=ACCOUNTS)
+    run = {"Id": "a0R1", "Status__c": "Failed", "Started__c": "2026-10-04T20:07:00.000+0000"}
+    sf = FakeSF(settings=Settings(max_leads_per_run=2), run=run, accounts=ACCOUNTS)
     p, _ = pipeline(sf)
     p.run()
     assert len(sf.inserted) == 1  # 1 bestaand + 1 nieuw = maximum 2
     assert sf.upserts[-1]["Leads_Created__c"] == 2
+    # Oorspronkelijke starttijd blijft: daarmee worden de leads van deze run gevonden.
+    assert sf.lead_window[0] == run["Started__c"]
+    assert sf.upserts[0]["Started__c"] == run["Started__c"]
 
 
-def test_dry_run_writes_nothing():
+def test_dry_run_writes_nothing_to_salesforce_but_reports(tmp_path):
     sf = FakeSF(accounts=ACCOUNTS)
-    p, notifier = pipeline(sf, dry_run=True)
+    p, notifier = pipeline(sf, dry_run=True, report_dir=tmp_path)
     assert p.run() == 0
     assert sf.upserts == [] and sf.inserted == [] and sf.tasks == [] and sf.segment_updates == []
-    assert notifier.weekly_calls
+    assert notifier.weekly_calls and notifier.weekly_calls[0]["schedule"] is False
+    assert "proefrun" in notifier.uploads[0]["content"]
+    assert "Task zou worden aangemaakt" in notifier.uploads[0]["content"]
+    assert (tmp_path / "leadscan-2026-W41.md").exists() and (tmp_path / "leadscan-2026-W41.json").exists()
 
 
 def test_dedup_only_skips_research():
@@ -221,7 +240,7 @@ def test_unreachable_sources_drop_the_lead():
     p, _ = pipeline(sf, verifier=lambda lead, cand, seen: Verification(ok=False, problems=["bron onbereikbaar"]))
     p.run()
     assert sf.inserted == []
-    assert "Bronnen" in sf.upserts[-1]["Errors__c"]
+    assert "bronnen afgekeurd" in sf.upserts[-1]["Errors__c"]
 
 
 def test_claude_failure_marks_run_failed_and_writes_nothing():
@@ -249,7 +268,7 @@ def test_runtime_limit_stops_cleanly_and_still_writes():
 
     notifier = FakeNotifier()
     p = Pipeline(sf, FakeClaude(handler=slow_handler), notifier, run_key="2026-W41", clock=lambda: t["now"],
-                 verifier=ok_verifier)
+                 verifier=ok_verifier, report_dir=None)
     assert p.run() == 0
     assert sf.upserts[-1]["Status__c"] == "Completed"
     assert "looptijd" in sf.upserts[-1]["Errors__c"]

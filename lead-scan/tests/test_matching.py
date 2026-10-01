@@ -1,8 +1,10 @@
+"""Alle organisatienamen en domeinen in deze tests zijn fictief."""
+
 from runner.matching import (
     ExistingRecord,
-    domain_fits_name,
     MatchIndex,
     RunDeduper,
+    domain_fits_name,
     email_domain,
     name_keys,
     name_similarity,
@@ -14,9 +16,9 @@ from runner.matching import (
 
 def test_normalize_domain_variants():
     assert normalize_domain("https://www.Voorbeeld.nl/over-ons?x=1") == "voorbeeld.nl"
-    assert normalize_domain("www.albeda.nl/") == "albeda.nl"
-    assert normalize_domain("http://landstedembo.nl") == "landstedembo.nl"
-    assert normalize_domain("https://www.hva.nl/faculteit/ft/over-techniek.html") == "hva.nl"
+    assert normalize_domain("www.leerhuis.nl/") == "leerhuis.nl"
+    assert normalize_domain("http://duinhorstmbo.nl") == "duinhorstmbo.nl"
+    assert normalize_domain("https://www.hsnoord.nl/faculteit/ft/over-techniek.html") == "hsnoord.nl"
     assert normalize_domain("werkenbij.voorbeeld.nl") == "voorbeeld.nl"
     assert normalize_domain("shop.example.co.uk") == "example.co.uk"
     assert normalize_domain("voorbeeld.nl:8080") == "voorbeeld.nl"
@@ -26,23 +28,23 @@ def test_normalize_domain_rejects_garbage_platforms_and_own_domain():
     assert normalize_domain("under construction") is None
     assert normalize_domain("") is None
     assert normalize_domain(None) is None
-    assert normalize_domain("https://schoonderwolf.homerun.co/") is None
+    assert normalize_domain("https://voorbeeld.homerun.co/") is None
     assert normalize_domain("https://www.linkedin.com/company/x") is None
     assert normalize_domain("www.cobracrm.nl") is None
 
 
 def test_email_domain_strips_sandbox_suffix_and_generic_providers():
-    assert email_domain("henri@apollovredestein.com.invalid") == "apollovredestein.com"
+    assert email_domain("info@bandenfabriek.com.invalid") == "bandenfabriek.com"
     assert email_domain("iemand@gmail.com") is None
     assert email_domain("iemand@hotmail.nl.invalid") is None
-    assert email_domain("support+apollo@cobracrm.nl.invalid") is None
+    assert email_domain("support+test@cobracrm.nl.invalid") is None
     assert email_domain("geen-email") is None
 
 
 def test_normalize_kvk():
-    assert normalize_kvk("01169476") == "01169476"
-    assert normalize_kvk("5047024") == "05047024"  # voorloopnul weggevallen
-    assert normalize_kvk("4147 6190") == "41476190"
+    assert normalize_kvk("01234567") == "01234567"
+    assert normalize_kvk("7654321") == "07654321"  # voorloopnul weggevallen
+    assert normalize_kvk("4321 8765") == "43218765"
     assert normalize_kvk("123") is None
     assert normalize_kvk("N/A") is None
     assert normalize_kvk("12345678") is None  # bekende testwaarde
@@ -50,43 +52,43 @@ def test_normalize_kvk():
 
 
 def test_normalize_name_strips_legal_forms_and_accents():
-    assert normalize_name("Stichting De Zonnebloem") == "zonnebloem"
-    assert normalize_name("Bynder B.V.") == "bynder"
-    assert normalize_name("C.S.C. Ceelen Sport Constructies B.V.") == "csc ceelen sport constructies"
-    assert normalize_name("Bartiméus Fonds") == "bartimeus fonds"
-    assert normalize_name("Landstede Groep") == normalize_name("Stichting Landstede")
+    assert normalize_name("Stichting De Zilvermeeuw") == "zilvermeeuw"
+    assert normalize_name("Voorbeeld B.V.") == "voorbeeld"
+    assert normalize_name("A.B.C. Testbouw Constructies B.V.") == "abc testbouw constructies"
+    assert normalize_name("Stichting Hélène Fonds") == "helene fonds"
+    assert normalize_name("Duinhorst Groep") == normalize_name("Stichting Duinhorst")
 
 
 def test_name_keys_aliases():
-    assert name_keys("Stichting Kinderen Kankervrij (KiKa)") == {"kinderen kankervrij", "kika"}
-    assert {"regio college", "talland"} <= name_keys("Regio College / Talland")
-    assert name_keys("CZ") == {"cz"}  # korte, echte organisatienaam
-    assert "eo" in name_keys("Evangelische Omroep (EO)")
+    assert name_keys("Stichting Kinderen Zonder Zorgen (KiZZ)") == {"kinderen zonder zorgen", "kizz"}
+    assert {"regio leerhuis", "duinhorst"} <= name_keys("Regio Leerhuis / Duinhorst")
+    assert name_keys("QZ") == {"qz"}  # korte, echte organisatienamen bestaan
+    assert "oz" in name_keys("Stichting Omroep Zuid (OZ)")
     assert name_keys("x") == set() and name_keys("...") == set()
 
 
 def test_name_similarity():
-    assert name_similarity("zonnebloem", "zonnebloem") == 1.0
-    assert name_similarity("landstede", "landstede vo") >= 0.82
-    assert name_similarity("zonnebleom", "zonnebloem") >= 0.82
+    assert name_similarity("zilvermeeuw", "zilvermeeuw") == 1.0
+    assert name_similarity("duinhorst", "duinhorst vo") >= 0.82
+    assert name_similarity("zilvermeuw", "zilvermeeuw") >= 0.82
     assert name_similarity("eo", "eo media") == 0.0  # te kort woord voor deelnaam
-    assert name_similarity("kwartelkoning logistiek", "zonnebloem") < 0.82
+    assert name_similarity("kwartelkoning logistiek", "zilvermeeuw") < 0.82
 
 
 def _index():
     return MatchIndex(
         [
-            ExistingRecord("001A", "Account", "Stichting De Zonnebloem", owner_id="005X", type="Customer",
-                           excluded=True, exclusion_reason="Account Type Customer", domains={"zonnebloem.nl"}),
-            ExistingRecord("001B", "Account", "Realiance", owner_id="005Y", type="Prospect",
-                           domains={"realiance.nl"}, kvks={"12312312"}),
-            ExistingRecord("00QC", "Lead", "Motivaction international", owner_id="005Z", status="New",
-                           email_domains={"motivaction.nl"}),
-            ExistingRecord("00QD", "Lead", "Dresd", status="Unqualified", excluded=True,
-                           exclusion_reason="recent Unqualified", email_domains={"hr.nl"}),
-            ExistingRecord("001E", "Account", "Regio College / Talland", type="Customer", excluded=True,
-                           exclusion_reason="klant", email_domains={"regiocollege.nl", "saxion.nl"}),
-            ExistingRecord("001D", "Account", "Stichting Kinderen Kankervrij (KiKa)", type="Customer",
+            ExistingRecord("001A", "Account", "Stichting De Zilvermeeuw", owner_id="005X", type="Customer",
+                           excluded=True, exclusion_reason="Account Type Customer", domains={"zilvermeeuw.nl"}),
+            ExistingRecord("001B", "Account", "Vastgoedpartners Oost", owner_id="005Y", type="Prospect",
+                           domains={"vastgoedpartnersoost.nl"}, kvks={"12312312"}),
+            ExistingRecord("00QC", "Lead", "Marktbeeld international", owner_id="005Z", status="New",
+                           email_domains={"marktbeeld.nl"}),
+            ExistingRecord("00QD", "Lead", "Lumen", status="Unqualified", excluded=True,
+                           exclusion_reason="recent Unqualified", email_domains={"hsrijnmond.nl"}),
+            ExistingRecord("001E", "Account", "Regio Leerhuis / Duinhorst", type="Customer", excluded=True,
+                           exclusion_reason="klant", email_domains={"regioleerhuis.nl", "hogeschoolnoord.nl"}),
+            ExistingRecord("001D", "Account", "Stichting Kinderen Zonder Zorgen (KiZZ)", type="Customer",
                            excluded=True, exclusion_reason="Account Type Customer"),
         ]
     )
@@ -94,18 +96,18 @@ def _index():
 
 def test_check_layer1_on_domain_name_and_alias():
     idx = _index()
-    assert idx.check("Iets Anders", "https://www.zonnebloem.nl/doneren").outcome == "blocked_l1"
-    assert idx.check("De Zonnebloem", None).outcome == "blocked_l1"
-    assert idx.check("KiKa", None).outcome == "blocked_l1"
+    assert idx.check("Iets Anders", "https://www.zilvermeeuw.nl/doneren").outcome == "blocked_l1"
+    assert idx.check("De Zilvermeeuw", None).outcome == "blocked_l1"
+    assert idx.check("KiZZ", None).outcome == "blocked_l1"
 
 
 def test_check_layer2_existing_records_and_task_target():
     idx = _index()
-    res = idx.check("Realiance B.V.", None)
+    res = idx.check("Vastgoedpartners Oost B.V.", None)
     assert res.outcome == "blocked_l2"
     assert res.task_target().id == "001B"
     assert idx.check("Onbekend", None, kvk="12312312").outcome == "blocked_l2"
-    lead = idx.check("Iets", "motivaction.nl")
+    lead = idx.check("Iets", "marktbeeld.nl")
     assert lead.outcome == "blocked_l2" and lead.task_target().object == "Lead"
 
 
@@ -123,29 +125,29 @@ def test_excluded_match_wins_over_existing_record():
 
 
 def test_domain_fits_name():
-    assert domain_fits_name("apollovredestein.com", "Apollo Vredestein")
-    assert domain_fits_name("regiocollege.nl", "Regio College / Talland")
-    assert domain_fits_name("talland.nl", "Regio College / Talland")
-    assert domain_fits_name("hu.nl", "Hogeschool Utrecht")  # initialen
-    assert domain_fits_name("kwf.nl", "KWF Kankerbestrijding")
-    assert domain_fits_name("motivaction.nl", "Motivaction international")
-    assert not domain_fits_name("saxion.nl", "Regio College / Talland")
-    assert not domain_fits_name("hr.nl", "Dresd")
-    assert not domain_fits_name("utwente.nl", "ut")
-    assert not domain_fits_name("vu.nl", "Hogeschool Utrecht")
+    assert domain_fits_name("bandenfabriekveluwe.com", "Banden Fabriek Veluwe")
+    assert domain_fits_name("regioleerhuis.nl", "Regio Leerhuis / Duinhorst")
+    assert domain_fits_name("duinhorst.nl", "Regio Leerhuis / Duinhorst")
+    assert domain_fits_name("hv.nl", "Hogeschool Veenstad")  # initialen
+    assert domain_fits_name("zvf.nl", "ZVF Zeevogelfonds")
+    assert domain_fits_name("marktbeeld.nl", "Marktbeeld international")
+    assert not domain_fits_name("hogeschoolnoord.nl", "Regio Leerhuis / Duinhorst")
+    assert not domain_fits_name("hsrijnmond.nl", "Lumen")
+    assert not domain_fits_name("tunoord.nl", "tn")
+    assert not domain_fits_name("hx.nl", "Hogeschool Veenstad")
 
 
 def test_email_domain_counts_hard_only_when_it_fits_the_record_name():
     idx = _index()
-    assert idx.check("Regio College", "regiocollege.nl").outcome == "blocked_l1"
-    saxion = idx.check("Saxion", "saxion.nl")
-    assert saxion.outcome == "doubt" and saxion.matches[0].key_type == "email_domain_unrelated"
-    assert idx.check("Hogeschool Rotterdam", "hr.nl").outcome == "doubt"
+    assert idx.check("Regio Leerhuis", "regioleerhuis.nl").outcome == "blocked_l1"
+    other = idx.check("Hogeschool Noord", "hogeschoolnoord.nl")
+    assert other.outcome == "doubt" and other.matches[0].key_type == "email_domain_unrelated"
+    assert idx.check("Hogeschool Rijnmond", "hsrijnmond.nl").outcome == "doubt"
 
 
 def test_check_doubt_and_clear():
     idx = _index()
-    doubt = idx.check("Zonnebleom", None)
+    doubt = idx.check("Zilvermeuw", None)
     assert doubt.outcome == "doubt"
     assert doubt.matches[0].record.id == "001A"
     assert idx.check("Kwartelkoning Logistiek", "kwartelkoning.nl").outcome == "clear"

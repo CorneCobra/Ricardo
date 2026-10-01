@@ -7,11 +7,6 @@
     <description>Access for the integration user of the weekly lead scan: read all leads, accounts, contacts and opportunities for duplicate checks; create leads, tasks and scan records.</description>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Lead.Chamber_of_Commerce_Number__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>Lead.Current_SF_Partner__c</field>
         <readable>true</readable>
     </fieldPermissions>
@@ -47,37 +42,12 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Lead.Scan_ICP_Version__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Lead.Scan_Opening_Line__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Lead.Scan_Run__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
         <field>Lead.Scan_Score__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>Lead.Scan_Segment__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Lead.Scan_Signal__c</field>
-        <readable>true</readable>
-    </fieldPermissions>
-    <fieldPermissions>
-        <editable>true</editable>
-        <field>Lead.Scan_Sources__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

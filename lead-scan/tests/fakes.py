@@ -56,6 +56,10 @@ class FakeNotifier:
     def __init__(self):
         self.weekly_calls = []
         self.errors = []
+        self.uploads = []
+
+    def upload(self, filename, content, title, comment):
+        self.uploads.append({"filename": filename, "content": content, "title": title})
 
     def weekly(self, stats, top, run_url, warnings, now, schedule):
         self.weekly_calls.append({"stats": stats, "top": top, "warnings": warnings, "schedule": schedule})

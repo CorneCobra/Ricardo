@@ -24,21 +24,28 @@ def source_urls(lead: dict, candidate: dict) -> list[str]:
     return list(dict.fromkeys(urls))  # uniek, volgorde behouden
 
 
-def description(lead: dict, candidate: dict) -> str:
+def description(lead: dict, candidate: dict, run_key: str) -> str:
+    """Alles wat sales nodig heeft, zonder extra velden op Lead."""
     parts = [
+        f"Openingszin: {lead['opening_line']}",
         f"Waarom nu: {lead['why_now']}",
         f"Signaal ({candidate['signal_type']}): {candidate['signal_summary']}",
         f"Projectinschatting: {lead['project_estimate']}",
         f"Score {lead['score']}/100 (ICP {ICP_VERSION}): {lead['score_rationale']}",
         f"Rol om te benaderen: {lead['contact_role']}",
     ]
+    kvk = normalize_kvk(lead.get("kvk_number"))
+    if kvk:
+        parts.append(f"KvK-nummer: {kvk}")
     if lead.get("current_crm"):
         parts.append(f"Huidig CRM: {lead['current_crm']}")
     if lead.get("current_sf_partner"):
         parts.append(f"Huidige Salesforce-partner: {lead['current_sf_partner']}")
     parts.append("Onderbouwing:")
     parts += [f"- {c['claim']} ({c['source_url']})" for c in lead["claims"]]
-    parts.append("Aangemaakt door de wekelijkse leadscan (Claude). Controleer de bronnen voor gebruik.")
+    parts.append("Bronnen:")
+    parts += [f"- {u}" for u in source_urls(lead, candidate)]
+    parts.append(f"Aangemaakt door de wekelijkse leadscan (Claude), run {run_key}. Controleer de bronnen voor gebruik.")
     return _cut("\n".join(parts), DESCRIPTION_MAX)
 
 
@@ -46,10 +53,11 @@ def lead_record(
     lead: dict,
     candidate: dict,
     *,
-    run_id: str,
+    run_key: str,
     queue_id: str,
     partner_account_id: str | None,
 ) -> dict:
+    """Lead-velden. Nieuw op Lead zijn alleen Scan_Score__c en Scan_Segment__c; de rest staat in Description."""
     industry = lead["industry"]
     sub = lead.get("sub_industry")
     if sub not in SUB_INDUSTRY_BY_INDUSTRY.get(industry, []):
@@ -67,17 +75,11 @@ def lead_record(
         "Huidige_CRM__c": lead.get("current_crm"),
         "Current_SF_Partner__c": partner_account_id,
         "Need_Pain__c": _cut(lead["why_now"], 255),
-        "Description": description(lead, candidate),
+        "Description": description(lead, candidate, run_key),
         "LeadSource": config.LEAD_SOURCE,
         "Status": config.LEAD_STATUS,
         "OwnerId": queue_id,
         "Scan_Score__c": lead["score"],
-        "Scan_Signal__c": candidate["signal_type"],
-        "Scan_Opening_Line__c": _cut(lead["opening_line"], 255),
-        "Scan_Sources__c": "\n".join(source_urls(lead, candidate)),
-        "Chamber_of_Commerce_Number__c": normalize_kvk(lead.get("kvk_number")),
-        "Scan_ICP_Version__c": ICP_VERSION,
-        "Scan_Run__c": run_id,
         "Scan_Segment__c": candidate["segment_id"],
     }
     return {k: v for k, v in record.items() if v not in (None, "")}

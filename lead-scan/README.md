@@ -6,10 +6,10 @@ Metadatapakket voor de testomgeving. Bevat de nieuwe velden, objecten, regels en
 
 | Onderdeel | Inhoud |
 | --- | --- |
-| Lead – nieuwe velden | Scan_Score__c, Scan_Signal__c, Scan_Opening_Line__c, Scan_Sources__c, Chamber_of_Commerce_Number__c, Scan_ICP_Version__c, Scan_Run__c, Scan_Segment__c |
+| Lead – nieuwe velden | Alleen `Scan_Score__c` (score 0-100, voor sorteren en het bijstellen van de drempel) en `Scan_Segment__c` (lookup, voor het leren per segment). Openingszin, signaal, bronnen, KvK-nummer en run staan in `Description`; alle details staan in het runrapport (zie fase 2). |
 | Lead – validation rules | Scan_Reason_Unqualified_Required (reden verplicht bij Unqualified, alleen voor scan-leads) · Scan_Block_Convert_Placeholder_Name (geen conversie met achternaam 'Onbekend') |
 | Scan_Segment__c | Zoeksegmenten met strategie, gewicht en conversiecijfers |
-| Scan_Run__c | Eén record per run, met Run_Key__c als unieke sleutel (idempotent) |
+| Scan_Run__c | Eén record per run, met Run_Key__c als unieke sleutel (idempotent). Geen lookup op Lead: de leads van een run zijn te vinden via LeadSource + integratiegebruiker + Started/Finished |
 | Lead_Scan_Setting__mdt | Uitschakelknop en limieten; record 'Default' (max 10 leads, min. score 70, max 15 zoekacties per kandidaat, max 240 min, 30% verkennen, max 20% gewichtswijziging, leren uit) |
 | Queue | Claude Leads (Lead) |
 | Matching rules | Lead: Company (fuzzy) OF Website (exact) · Account: Name (fuzzy) OF Website (exact) – bewust zonder achternaam |
@@ -46,11 +46,10 @@ Fout over *sortOrder*? Er staan nu 3 (inactieve) duplicate rules op Lead, daarom
 
 ## Stap 5 – Handmatig na de deploy
 
-1. **Lead field mapping** (Lead > Fields > Map Lead Fields): `Chamber_of_Commerce_Number__c` → Account `Chamber of Commerce Number`.
-2. **Queue Claude Leads**: leden toevoegen (de afgesproken eigenaar vanuit sales).
-3. **Integratiegebruiker**: aanmaken (Salesforce Integration-licentie of API-only profiel) en permission set *Lead Scan Integration* toewijzen.
-4. **Page layout Lead**: sectie 'Leadscan' met de nieuwe velden; related list 'Leads' op Scan Run en Scan Segment.
-5. **Account Engagement**: controleer de sync-criteria, zodat leads met LeadSource 'Claude Weekly Scan' niet in marketingprogramma's terechtkomen.
+1. **Queue Claude Leads**: leden toevoegen (de afgesproken eigenaar vanuit sales).
+2. **Integratiegebruiker**: aanmaken (Salesforce Integration-licentie of API-only profiel) en permission set *Lead Scan Integration* toewijzen.
+3. **Page layout Lead**: `Scan Score` en `Scan Segment` toevoegen (bijv. bij Lead Information); related list 'Leads' op Scan Segment. List view 'Claude Leads' op de queue, gesorteerd op Scan Score.
+4. **Account Engagement**: controleer de sync-criteria, zodat leads met LeadSource 'Claude Weekly Scan' niet in marketingprogramma's terechtkomen.
 
 ## Controle na deploy
 
@@ -82,7 +81,9 @@ Python-runner buiten Salesforce (GitHub Actions). Salesforce blijft de bron van 
 | `runner/verify_sources.py` | Domein bestaat (DNS) en elke bron-URL is bereikbaar; anders valt de lead af |
 | `runner/allocate.py` | Bandit-verdeling van het zoekbudget (verkennen/benutten) |
 | `runner/lead_mapping.py` | JSON → Lead- en Task-velden (code, geen oordeel) |
-| `runner/slack.py` | Weekupdate (ingepland voor maandag 08:00) en directe foutmeldingen |
+| `runner/slack.py` | Weekupdate (ingepland voor maandag 08:00), runrapport als bestand en directe foutmeldingen |
+| `runner/report.py` | Runrapport per run (Markdown + JSON): elke kandidaat met besluit per laag, onderzoek, claims en bronnen |
+| `runner/rollback.py` | Lead-Id's van één run (CSV) om terug te draaien |
 | `runner/learning.py` | Segmentcijfers bijwerken; reflectie en gewichtsaanpassing volgen in fase 6 |
 | `runner/golden.py` + `tests/golden_set.json` | Gouden testset door de dubbelcheck (harde poort fase 3) |
 | `runner/icp.py` | ICP-tekst en -versie (**v1-concept, nog vast te stellen door sales**) |
@@ -98,7 +99,18 @@ Python-runner buiten Salesforce (GitHub Actions). Salesforce blijft de bron van 
 6. Diep onderzoek per overgebleven kandidaat, daarna **opnieuw** laag 1-3 met de officiële naam, het eigen domein en het KvK-nummer.
 7. Bronnencontrole, AVG-controle (geen e-mail/telefoon/LinkedIn-profielen), drempel `Minimum_Score__c`.
 8. Kill switch opnieuw controleren, dan pas schrijven: top `Max_Leads_Per_Run__c` op score via Composite API (laag 4 = duplicate rule), daarna de Tasks.
-9. Segmentcijfers bijwerken, `Scan_Run__c` op *Completed* met alle tellers en een log in `Errors__c`, Slack-weekupdate.
+9. Segmentcijfers bijwerken, `Scan_Run__c` op *Completed* met alle tellers en een log in `Errors__c`, runrapport en weekupdate naar Slack.
+
+## Waar staat welke informatie?
+
+| Waar | Wat | Voor wie |
+| --- | --- | --- |
+| Lead (Salesforce) | Bestaande velden + `Scan_Score__c` en `Scan_Segment__c`. In `Description`: openingszin, waarom nu, signaal, projectinschatting, score-onderbouwing, rol, KvK-nummer, CRM/partner, claims met bronnen en de run | Sales |
+| `Scan_Run__c` (Salesforce) | Tellers per laag, model- en ICP-versie, log (`Errors__c`) | Beheer, het leren |
+| Runrapport (Slack, bestand in #claude-leads) | Álle kandidaten, ook de afgevallen: besluit en reden per laag, volledige onderzoeksuitkomst, bronnencontrole | Beheer, kwaliteitscontrole, de maandelijkse reflectie |
+| GitHub Actions-logs | Alleen aantallen | Iedereen (publieke repository) |
+
+Het runrapport gaat bewust niet naar GitHub (artifact of log): de repository is publiek. De runner kan niet zelf in Claude Docs schrijven (dat vraagt een persoonlijke koppeling); op verzoek zet Claude een rapport uit Slack of Salesforce om in een document.
 
 Harde limieten: zoekacties per kandidaat (search + fetch samen, ook over `pause_turn` heen), looptijd (`Max_Runtime_Minutes__c`, 10 minuten reserve om netjes af te ronden), maximum leads. Een fout halverwege → *Failed* + Slack, en er is niets weggeschreven (schrijven gebeurt pas aan het eind).
 
@@ -112,7 +124,15 @@ Uitgevoerd op een momentopname van de testomgeving (2.130 Accounts, 6.210 Contac
 | Elk uitgesloten record (1.642) per sleutel apart: naam, website, KvK, e-maildomein | 0 als nieuwe lead doorgelaten; alleen 20 records met een onzinnaam (`x`, `-`, `A`) hebben geen bruikbare sleutel |
 | 50 bekende Nederlandse organisaties uit de kernbranches | 43 staan al in Salesforce en worden tegengehouden (5 laag 1, 38 laag 2 → Task), 3 twijfelgevallen, 4 nieuw |
 
-Bevindingen die tot aanpassingen leidden: korte namen (CZ, iO, EO) werden genegeerd; e-maildomeinen van leads en contactpersonen blokkeerden hele hogescholen; `LastModifiedDate` is door een massa-update onbruikbaar als datum van diskwalificeren.
+Bevindingen die tot aanpassingen leidden: korte namen van twee letters werden genegeerd; e-maildomeinen van leads en contactpersonen blokkeerden hele hogescholen; `LastModifiedDate` is door een massa-update onbruikbaar als datum van diskwalificeren.
+
+## Terugdraaien per run
+
+```bash
+python -m runner.rollback --run-key 2026-W41   # schrijft out/rollback-2026-W41.csv met Lead-Id's
+```
+
+Verwijderen doet een beheerder met Data Loader (Delete) of Setup > Mass Delete Records. De integratiegebruiker heeft bewust geen verwijderrechten.
 
 ## Lokaal draaien
 
@@ -125,8 +145,8 @@ export ANTHROPIC_API_KEY=... SF_USERNAME=... SF_CONSUMER_KEY=... SF_PRIVATE_KEY=
 export SF_DOMAIN=test                      # altijd de testomgeving
 python -m runner.golden tests/golden_set.json            # gouden testset, laag 3 conservatief
 python -m runner.golden tests/golden_set.json --with-claude
-python -m runner.main --dry-run --dedup-only --run-key 2026-W41-proef   # fase 3: niets schrijven
-python -m runner.main --dry-run                                          # volledige run, niets schrijven
+python -m runner.main --dry-run --dedup-only --no-slack --run-key 2026-W41-proef   # fase 3: niets schrijven
+python -m runner.main --dry-run --no-slack                                          # volledige run, rapport in out/
 ```
 
 ## GitHub Actions
@@ -141,9 +161,9 @@ Inrichten (Settings → Environments → `lead-scan`):
 | Secret | `SF_USERNAME` | Gebruikersnaam van de integratiegebruiker (testomgeving) |
 | Secret | `SF_CONSUMER_KEY` | Consumer key van de Connected App (JWT) |
 | Secret | `SF_PRIVATE_KEY` | Private key (PEM) bij het certificaat van de Connected App |
-| Secret | `SLACK_BOT_TOKEN` | Bottoken van de Slack-app (`chat:write`), lid van #claude-leads |
+| Secret | `SLACK_BOT_TOKEN` | Bottoken van de Slack-app (`chat:write`, `files:write`), lid van #claude-leads |
 | Variable | `SF_DOMAIN` | `test` (standaard). Alleen na expliciet akkoord op `login` zetten |
-| Variable | `SLACK_CHANNEL` | `#claude-leads` (standaard) |
+| Variable | `SLACK_CHANNEL` | Kanaal-Id van #claude-leads (bijv. `C0123ABCD`); nodig voor het uploaden van het runrapport. Een naam werkt alleen met de extra scope `channels:read` |
 | Repo-variable | `LEAD_SCAN_ENABLED` | `true` zet de geplande run aan; zonder deze variabele draaien alleen handmatige runs |
 
 Geplande workflows draaien alleen vanaf de standaardbranch.
@@ -152,9 +172,11 @@ Geplande workflows draaien alleen vanaf de standaardbranch.
 
 - **Model**: `claude-opus-5-5`, adaptive thinking, effort `high`, met server-side fallback (`fallbacks: "default"`) bij een weigering door de veiligheidsclassifiers. Web search/fetch: `web_search_20260209` / `web_fetch_20260209`. Wisselen alleen na een geslaagde gouden testset.
 - **Strikter dan het ontwerp op twee punten**: de *hele* Account-boom van een klant valt af (ook zusterorganisaties), en elke bron-URL moet bereikbaar zijn (een 401/403/429 telt als bestaand, want veel sites weren bots).
-- **E-maildomeinen**: de testomgeving maskeert e-mail met `.invalid`; dat wordt gestript. Eigen domeinen (`OWN_DOMAINS`) en domeinen die bij 5 of meer Account-bomen voorkomen zijn geen sleutel. E-maildomeinen zijn rommelig (een lead "Dresd" met een hr.nl-adres, contactpersonen van Saxion bij Regio College). Een match op alleen het e-maildomein telt daarom hard als het domein bij de naam van het record past (`domain_fits_name`); anders wordt het een twijfelgeval voor laag 3.
+- **E-maildomeinen**: de testomgeving maskeert e-mail met `.invalid`; dat wordt gestript. Eigen domeinen (`OWN_DOMAINS`) en domeinen die bij 5 of meer Account-bomen voorkomen zijn geen sleutel. E-maildomeinen zijn rommelig (een lead met het e-mailadres van een hogeschool, contactpersonen van een andere onderwijsinstelling bij een klant). Een match op alleen het e-maildomein telt daarom hard als het domein bij de naam van het record past (`domain_fits_name`); anders wordt het een twijfelgeval voor laag 3.
 - **"Laatste 12 maanden Unqualified"** gebruikt de statusgeschiedenis (LeadHistory). Dekt die de periode niet (in de testomgeving begint ze op 12-08-2026, dezelfde dag als een massa-update van 1.155 leads), dan geldt `LastModifiedDate` als strenge benadering. In productie opnieuw controleren.
 - **Permission set**: `Lead.Email` (lezen) toegevoegd, nodig voor de e-maildomeinmatching. Controleer bij de dry-run-deploy of de integratiegebruiker ook City/Country op Lead mag vullen.
+- **Signaaltype**: staat niet op Lead. Geef elk segment één `Signal_Type__c`; de runner accepteert dan alleen kandidaten met dat signaal, zodat het leren per signaal via het segment loopt.
+- **Publieke repository**: code, workflow en logs zijn openbaar. Daarom geen klantnamen in tests of documentatie (alleen fictieve voorbeelden), geen details in de Actions-logs (`LEADSCAN_QUIET_LOGS=1`) en geen runrapport als artifact.
 - **Sub_Industry__c** is afhankelijk van Industry; de runner vult alleen bekende combinaties (`SUB_INDUSTRY_BY_INDUSTRY`). De koppeling van *Sociaal Ontwikkelbedrijf* nog controleren.
 - **Tasks** gaan alleen naar een eigenaar die een gebruiker is; staat een bestaande lead in een queue, dan wordt dat gelogd.
 - De gouden testset bevat alleen record-Id's; `runner/golden.py` haalt namen, websites en KvK live op, zodat er geen klantenlijst in de repository staat.

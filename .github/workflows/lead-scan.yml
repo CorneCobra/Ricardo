@@ -15,8 +15,8 @@ on:
         type: choice
         default: dry-run-dedup
         options:
-          - dry-run-dedup  # fase 3: alleen ontdekken + dubbelcheck, niets schrijven
-          - dry-run        # volledige run, niets schrijven
+          - dry-run-dedup  # fase 3: alleen ontdekken + dubbelcheck; niets naar Salesforce, rapport naar Slack
+          - dry-run        # volledige run; niets naar Salesforce, rapport naar Slack
           - golden-set     # gouden testset door de dubbelcheck (harde poort)
           - run            # echte run: schrijft leads, Tasks en Scan_Run__c
       run_key:
@@ -52,6 +52,8 @@ jobs:
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       SF_DOMAIN: ${{ vars.SF_DOMAIN || 'test' }}
       SLACK_CHANNEL: ${{ vars.SLACK_CHANNEL || '#claude-leads' }}
+      # Publieke repository: logs alleen met aantallen. Details gaan als runrapport naar Slack.
+      LEADSCAN_QUIET_LOGS: "1"
     steps:
       - uses: actions/checkout@v4
 
