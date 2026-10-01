@@ -4,6 +4,11 @@ Sleutels: websitedomein (Lead, Account), e-maildomein (Lead, Contact), KvK-numme
 (Account) en genormaliseerde naam. Een exacte match op een uitgesloten record is
 laag 1; een exacte match op elk ander bestaand record is laag 2. Lijkt de naam
 alleen op een bestaand record, dan is het een twijfelgeval voor laag 3.
+
+E-maildomeinen zijn rommelig (een lead 'X' met een hogeschool-adres, contactpersonen
+van andere organisaties bij een Account). Een match op alleen het e-maildomein telt
+daarom hard als het domein bij de naam van het record past; anders is het een
+twijfelgeval, zodat Claude de records vergelijkt en bij twijfel de kandidaat laat vallen.
 """
 
 from __future__ import annotations
@@ -127,7 +132,25 @@ def name_keys(value: str | None) -> set[str]:
     parts = re.findall(r"\(([^)]*)\)", value)
     parts += re.split(r"\s*/\s*", re.sub(r"\([^)]*\)", " ", value)) if "/" in value else []
     keys |= {normalize_name(p) for p in parts}
-    return {k for k in keys if len(k) >= 3}
+    # Twee tekens is genoeg voor een exacte sleutel (CZ, iO, EO); losse letters niet.
+    return {k for k in keys if len(k) >= 2}
+
+
+def domain_fits_name(domain: str, name: str) -> bool:
+    """Past een domein bij een organisatienaam? 'apollovredestein.com' ~ 'Apollo Vredestein'."""
+    label = domain.split(".")[0].replace("-", "")
+    if len(label) < 2:
+        return False
+    for key in name_keys(name):
+        compact = key.replace(" ", "")
+        initials = "".join(t[0] for t in key.split())
+        if label == compact or (len(initials) >= 2 and label == initials):
+            return True
+        if len(label) >= 3 and compact.startswith(label):  # 'kwf' ~ 'KWF Kankerbestrijding'
+            return True
+        if (len(compact) >= 4 and compact in label) or (len(label) >= 4 and label in compact):
+            return True
+    return False
 
 
 def name_similarity(a: str, b: str) -> float:
@@ -161,8 +184,9 @@ class ExistingRecord:
     status: str | None = None
     excluded: bool = False
     exclusion_reason: str | None = None
-    domains: set[str] = field(default_factory=set)
+    domains: set[str] = field(default_factory=set)  # websitedomein
     kvks: set[str] = field(default_factory=set)
+    email_domains: set[str] = field(default_factory=set)  # van de Lead zelf of van Contacts
 
     def summary(self) -> dict:
         return {
@@ -171,7 +195,8 @@ class ExistingRecord:
             "name": self.name,
             "type": self.type,
             "status": self.status,
-            "domains": sorted(self.domains),
+            "website_domains": sorted(self.domains),
+            "email_domains": sorted(self.email_domains),
             "kvk_numbers": sorted(self.kvks),
         }
 
@@ -179,7 +204,7 @@ class ExistingRecord:
 @dataclass
 class Match:
     record: ExistingRecord
-    key_type: str  # domain, kvk, name, fuzzy_name
+    key_type: str  # domain, email_domain, kvk, name, fuzzy_name, email_domain_unrelated
     key: str
     similarity: float = 1.0
 
@@ -212,11 +237,14 @@ class MatchIndex:
     def __init__(self, records: list[ExistingRecord]):
         self.records = records
         self.by_domain: dict[str, list[ExistingRecord]] = defaultdict(list)
+        self.by_email_domain: dict[str, list[ExistingRecord]] = defaultdict(list)
         self.by_kvk: dict[str, list[ExistingRecord]] = defaultdict(list)
         self.by_name: dict[str, list[ExistingRecord]] = defaultdict(list)
         for rec in records:
             for d in rec.domains:
                 self.by_domain[d].append(rec)
+            for d in rec.email_domains - rec.domains:
+                self.by_email_domain[d].append(rec)
             for k in rec.kvks:
                 self.by_kvk[k].append(rec)
             for n in name_keys(rec.name):
@@ -225,9 +253,15 @@ class MatchIndex:
 
     def check(self, company_name: str, domain: str | None, kvk: str | None = None) -> MatchResult:
         strong: list[Match] = []
+        weak: list[Match] = []
         d = normalize_domain(domain)
         if d:
             strong += [Match(r, "domain", d) for r in self.by_domain.get(d, [])]
+            for r in self.by_email_domain.get(d, []):
+                if domain_fits_name(d, r.name):
+                    strong.append(Match(r, "email_domain", d))
+                else:
+                    weak.append(Match(r, "email_domain_unrelated", d, 0.85))
         k = normalize_kvk(kvk)
         if k:
             strong += [Match(r, "kvk", k) for r in self.by_kvk.get(k, [])]
@@ -245,9 +279,10 @@ class MatchIndex:
             score = name_similarity(n, other)
             if score >= config.FUZZY_DOUBT_THRESHOLD:
                 fuzzy += [Match(r, "fuzzy_name", other, score) for r in self.by_name[other]]
-        if fuzzy:
-            fuzzy.sort(key=lambda m: (-m.similarity, not m.record.excluded))
-            return MatchResult("doubt", fuzzy[:5])
+        doubts = weak + fuzzy
+        if doubts:
+            doubts.sort(key=lambda m: (-m.similarity, not m.record.excluded))
+            return MatchResult("doubt", doubts[:5])
         return MatchResult("clear")
 
 

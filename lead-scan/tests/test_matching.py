@@ -1,5 +1,6 @@
 from runner.matching import (
     ExistingRecord,
+    domain_fits_name,
     MatchIndex,
     RunDeduper,
     email_domain,
@@ -59,6 +60,9 @@ def test_normalize_name_strips_legal_forms_and_accents():
 def test_name_keys_aliases():
     assert name_keys("Stichting Kinderen Kankervrij (KiKa)") == {"kinderen kankervrij", "kika"}
     assert {"regio college", "talland"} <= name_keys("Regio College / Talland")
+    assert name_keys("CZ") == {"cz"}  # korte, echte organisatienaam
+    assert "eo" in name_keys("Evangelische Omroep (EO)")
+    assert name_keys("x") == set() and name_keys("...") == set()
 
 
 def test_name_similarity():
@@ -77,7 +81,11 @@ def _index():
             ExistingRecord("001B", "Account", "Realiance", owner_id="005Y", type="Prospect",
                            domains={"realiance.nl"}, kvks={"12312312"}),
             ExistingRecord("00QC", "Lead", "Motivaction international", owner_id="005Z", status="New",
-                           domains={"motivaction.nl"}),
+                           email_domains={"motivaction.nl"}),
+            ExistingRecord("00QD", "Lead", "Dresd", status="Unqualified", excluded=True,
+                           exclusion_reason="recent Unqualified", email_domains={"hr.nl"}),
+            ExistingRecord("001E", "Account", "Regio College / Talland", type="Customer", excluded=True,
+                           exclusion_reason="klant", email_domains={"regiocollege.nl", "saxion.nl"}),
             ExistingRecord("001D", "Account", "Stichting Kinderen Kankervrij (KiKa)", type="Customer",
                            excluded=True, exclusion_reason="Account Type Customer"),
         ]
@@ -112,6 +120,27 @@ def test_excluded_match_wins_over_existing_record():
     res = idx.check("Voorbeeld", "voorbeeld.nl")
     assert res.outcome == "blocked_l1"
     assert res.task_target() is None
+
+
+def test_domain_fits_name():
+    assert domain_fits_name("apollovredestein.com", "Apollo Vredestein")
+    assert domain_fits_name("regiocollege.nl", "Regio College / Talland")
+    assert domain_fits_name("talland.nl", "Regio College / Talland")
+    assert domain_fits_name("hu.nl", "Hogeschool Utrecht")  # initialen
+    assert domain_fits_name("kwf.nl", "KWF Kankerbestrijding")
+    assert domain_fits_name("motivaction.nl", "Motivaction international")
+    assert not domain_fits_name("saxion.nl", "Regio College / Talland")
+    assert not domain_fits_name("hr.nl", "Dresd")
+    assert not domain_fits_name("utwente.nl", "ut")
+    assert not domain_fits_name("vu.nl", "Hogeschool Utrecht")
+
+
+def test_email_domain_counts_hard_only_when_it_fits_the_record_name():
+    idx = _index()
+    assert idx.check("Regio College", "regiocollege.nl").outcome == "blocked_l1"
+    saxion = idx.check("Saxion", "saxion.nl")
+    assert saxion.outcome == "doubt" and saxion.matches[0].key_type == "email_domain_unrelated"
+    assert idx.check("Hogeschool Rotterdam", "hr.nl").outcome == "doubt"
 
 
 def test_check_doubt_and_clear():

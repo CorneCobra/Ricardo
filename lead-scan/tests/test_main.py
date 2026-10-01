@@ -43,6 +43,8 @@ class FakeSF:
             return self.accounts
         if "FROM Contact" in soql:
             return []
+        if "FROM LeadHistory" in soql:
+            return []
         if "Scan_Segment__c != null" in soql:
             return [{"Scan_Segment__c": "SEG1", "Status": "New"}]
         if "FROM Lead" in soql:

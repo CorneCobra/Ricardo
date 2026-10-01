@@ -102,6 +102,18 @@ Python-runner buiten Salesforce (GitHub Actions). Salesforce blijft de bron van 
 
 Harde limieten: zoekacties per kandidaat (search + fetch samen, ook over `pause_turn` heen), looptijd (`Max_Runtime_Minutes__c`, 10 minuten reserve om netjes af te ronden), maximum leads. Een fout halverwege → *Failed* + Slack, en er is niets weggeschreven (schrijven gebeurt pas aan het eind).
 
+## Proefrun dubbelcheck (1 oktober 2026, testomgeving)
+
+Uitgevoerd op een momentopname van de testomgeving (2.130 Accounts, 6.210 Contacts met e-mail, 4.690 open Leads), zonder schrijfacties:
+
+| Controle | Resultaat |
+| --- | --- |
+| Gouden testset (49 gevallen) | 49/49 geslaagd |
+| Elk uitgesloten record (1.642) per sleutel apart: naam, website, KvK, e-maildomein | 0 als nieuwe lead doorgelaten; alleen 20 records met een onzinnaam (`x`, `-`, `A`) hebben geen bruikbare sleutel |
+| 50 bekende Nederlandse organisaties uit de kernbranches | 43 staan al in Salesforce en worden tegengehouden (5 laag 1, 38 laag 2 → Task), 3 twijfelgevallen, 4 nieuw |
+
+Bevindingen die tot aanpassingen leidden: korte namen (CZ, iO, EO) werden genegeerd; e-maildomeinen van leads en contactpersonen blokkeerden hele hogescholen; `LastModifiedDate` is door een massa-update onbruikbaar als datum van diskwalificeren.
+
 ## Lokaal draaien
 
 ```bash
@@ -140,8 +152,8 @@ Geplande workflows draaien alleen vanaf de standaardbranch.
 
 - **Model**: `claude-opus-5-5`, adaptive thinking, effort `high`, met server-side fallback (`fallbacks: "default"`) bij een weigering door de veiligheidsclassifiers. Web search/fetch: `web_search_20260209` / `web_fetch_20260209`. Wisselen alleen na een geslaagde gouden testset.
 - **Strikter dan het ontwerp op twee punten**: de *hele* Account-boom van een klant valt af (ook zusterorganisaties), en elke bron-URL moet bereikbaar zijn (een 401/403/429 telt als bestaand, want veel sites weren bots).
-- **E-maildomeinen**: de testomgeving maskeert e-mail met `.invalid`; dat wordt gestript. Eigen domeinen (`OWN_DOMAINS`) en domeinen die bij 5 of meer Account-bomen voorkomen (adviesbureaus, leveranciers) zijn geen sleutel. Contactpersonen met het domein van een andere organisatie (bv. een ROC-medewerker met een Saxion-adres) maken die andere organisatie ook uitgesloten; dat is bewust streng.
-- **"Laatste 12 maanden Unqualified"** gebruikt `LastModifiedDate`, omdat er geen veldgeschiedenis op Status is. Dat sluit eerder te veel uit dan te weinig.
+- **E-maildomeinen**: de testomgeving maskeert e-mail met `.invalid`; dat wordt gestript. Eigen domeinen (`OWN_DOMAINS`) en domeinen die bij 5 of meer Account-bomen voorkomen zijn geen sleutel. E-maildomeinen zijn rommelig (een lead "Dresd" met een hr.nl-adres, contactpersonen van Saxion bij Regio College). Een match op alleen het e-maildomein telt daarom hard als het domein bij de naam van het record past (`domain_fits_name`); anders wordt het een twijfelgeval voor laag 3.
+- **"Laatste 12 maanden Unqualified"** gebruikt de statusgeschiedenis (LeadHistory). Dekt die de periode niet (in de testomgeving begint ze op 12-08-2026, dezelfde dag als een massa-update van 1.155 leads), dan geldt `LastModifiedDate` als strenge benadering. In productie opnieuw controleren.
 - **Permission set**: `Lead.Email` (lezen) toegevoegd, nodig voor de e-maildomeinmatching. Controleer bij de dry-run-deploy of de integratiegebruiker ook City/Country op Lead mag vullen.
 - **Sub_Industry__c** is afhankelijk van Industry; de runner vult alleen bekende combinaties (`SUB_INDUSTRY_BY_INDUSTRY`). De koppeling van *Sociaal Ontwikkelbedrijf* nog controleren.
 - **Tasks** gaan alleen naar een eigenaar die een gebruiker is; staat een bestaande lead in een queue, dan wordt dat gelogd.

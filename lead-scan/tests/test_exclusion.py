@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from runner.exclusion import build_account_records, build_lead_records
+from runner.exclusion import build_account_records, build_lead_records, unqualified_moments
 
 
 def _acc(id_, name, type_=None, parent=None, website=None, close=None, kvk=None):
@@ -37,9 +37,9 @@ def test_contact_email_domains_and_shared_domains():
     # een adviesbureau met contactpersonen bij 6 verschillende organisaties
     contacts += [{"AccountId": f"A{i}", "Email": f"x{i}@adviesbureau.nl"} for i in range(6)]
     recs = {r.id: r for r in build_account_records(accounts, contacts)}
-    assert recs["K"].domains == {"klant.nl"}
+    assert recs["K"].email_domains == {"klant.nl"} and recs["K"].domains == set()
     assert recs["K"].kvks == {"05047024"}
-    assert all("adviesbureau.nl" not in recs[f"A{i}"].domains for i in range(6))
+    assert all("adviesbureau.nl" not in recs[f"A{i}"].email_domains for i in range(6))
 
 
 def test_lead_exclusions():
@@ -54,6 +54,30 @@ def test_lead_exclusions():
         {"Id": "L4", "Company": "Open", "Status": "New", "Email": "x@open.nl.invalid", "Website": "www.open.nl"},
     ]
     recs = {r.id: r for r in build_lead_records(leads, now)}
-    assert recs["L1"].excluded and recs["L2"].excluded
+    assert recs["L1"].excluded and recs["L2"].excluded  # zonder geschiedenis: LastModifiedDate
     assert not recs["L3"].excluded and not recs["L4"].excluded
-    assert recs["L4"].domains == {"open.nl"}
+    assert recs["L4"].domains == {"open.nl"} and recs["L4"].email_domains == {"open.nl"}
+
+
+def test_lead_exclusion_uses_status_history_when_it_covers_the_period():
+    now = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    old = "2020-01-01T00:00:00.000+0000"
+    mass_update = "2026-08-12T11:00:00.000+0000"  # massa-update: zegt niets over diskwalificeren
+    leads = [
+        {"Id": "L1", "Company": "Recent af", "Status": "Unqualified", "CreatedDate": old, "LastModifiedDate": mass_update},
+        {"Id": "L2", "Company": "Lang geleden af", "Status": "Unqualified", "CreatedDate": old,
+         "LastModifiedDate": mass_update},
+        {"Id": "L3", "Company": "Nieuw en af", "Status": "Unqualified", "CreatedDate": "2026-09-01T00:00:00.000+0000",
+         "LastModifiedDate": "2026-09-01T00:00:00.000+0000"},
+    ]
+    history = [
+        {"LeadId": "L1", "NewValue": "Unqualified", "CreatedDate": "2026-03-01T00:00:00.000+0000"},
+        {"LeadId": "L2", "NewValue": "Working", "CreatedDate": "2026-03-01T00:00:00.000+0000"},
+    ]
+    moments = unqualified_moments(history)
+    covered = {r.id: r for r in build_lead_records(leads, now, moments, datetime(2024, 1, 1, tzinfo=timezone.utc))}
+    assert covered["L1"].excluded and covered["L3"].excluded
+    assert not covered["L2"].excluded
+    # geschiedenis begint pas op de dag van de massa-update: strenge benadering
+    short = {r.id: r for r in build_lead_records(leads, now, moments, datetime(2026, 8, 12, tzinfo=timezone.utc))}
+    assert short["L2"].excluded
