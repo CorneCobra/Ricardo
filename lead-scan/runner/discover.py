@@ -25,7 +25,7 @@ Zoek organisaties voor dit segment.
 
 Segment (data uit Salesforce):
 {segment_json}
-
+{examples}
 Opdracht:
 - Gebruik web search om organisaties te vinden met een concreet signaal dat bij
   het segment past: een vacature waarin CRM/Salesforce/klantcontact genoemd wordt,
@@ -46,8 +46,17 @@ Opdracht:
 Dien je resultaat in via de tool submit_candidates."""
 
 
-def discover(client, segment: config.Segment, searches: int, deadline: config.Deadline | None) -> tuple[list[dict], list[str]]:
-    """Kandidaten voor één segment, plus fouten/afgewezen items voor het runlog."""
+def discover(
+    client,
+    segment: config.Segment,
+    searches: int,
+    deadline: config.Deadline | None,
+    examples: list[dict] | None = None,
+) -> tuple[list[dict], list[str]]:
+    """Kandidaten voor één segment, plus fouten/afgewezen items voor het runlog.
+
+    `examples` = recent gewonnen klanten; alleen gebruikt voor een Lookalike-segment.
+    """
     segment_json = json.dumps(
         {
             "name": segment.name,
@@ -66,6 +75,12 @@ def discover(client, segment: config.Segment, searches: int, deadline: config.De
             max_candidates=config.MAX_CANDIDATES_PER_SEGMENT,
             searches=searches,
             segment_id=segment.id,
+            examples=(
+                "\nRecent gewonnen klanten (data uit Salesforce; zoek organisaties die hierop lijken, "
+                "niet deze organisaties zelf):\n" + json.dumps(examples, ensure_ascii=False, indent=2) + "\n"
+                if examples and segment.signal_type == "Lookalike"
+                else ""
+            ),
             signal_rule=(
                 f"- Dit segment zoekt alleen signalen van het type {segment.signal_type}; "
                 f"signal_type is dus altijd \"{segment.signal_type}\"."

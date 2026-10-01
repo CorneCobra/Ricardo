@@ -13,8 +13,9 @@ on:
       mode:
         description: "Soort run"
         type: choice
-        default: dry-run-dedup
+        default: preflight
         options:
+          - preflight      # controleer koppelingen en metadata, schrijft niets
           - dry-run-dedup  # fase 3: alleen ontdekken + dubbelcheck; niets naar Salesforce, rapport naar Slack
           - dry-run        # volledige run; niets naar Salesforce, rapport naar Slack
           - golden-set     # gouden testset door de dubbelcheck (harde poort)
@@ -81,6 +82,7 @@ jobs:
           [ -n "$RUN_KEY" ] && args+=(--run-key "$RUN_KEY")
           [ "$FORCE" = "true" ] && args+=(--force)
           case "$MODE" in
+            preflight)     python -m runner.preflight ;;
             dry-run-dedup) python -m runner.main --dry-run --dedup-only "${args[@]}" ;;
             dry-run)       python -m runner.main --dry-run "${args[@]}" ;;
             golden-set)    python -m runner.golden tests/golden_set.json --with-claude ;;

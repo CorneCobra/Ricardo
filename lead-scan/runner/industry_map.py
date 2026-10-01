@@ -12,6 +12,7 @@ from .schemas import INDUSTRY_VALUES
 INDUSTRY_MAP: dict[str, str | None] = {
     # Onderwijs
     "HigherEducation": "Education",
+    "Educatie": "Education",
     "Higher Education": "Education",
     "Education Administration Programs": "Education",
     # Nonprofit

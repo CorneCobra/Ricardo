@@ -56,6 +56,9 @@ class FakeSF:
         return [Segment(id="SEG1", name="Nonprofit vacatures", target_industry="Nonprofit", signal_type="Vacancy",
                         search_strategy="CRM-vacatures bij goede doelen", weight=100, exploration=False)]
 
+    def recent_won_customers(self):
+        return [{"name": "Fictief Fonds", "industry": "Nonprofit"}]
+
     def queue_id(self):
         return "00GQ"
 

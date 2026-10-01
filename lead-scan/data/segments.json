@@ -1,0 +1,86 @@
+{
+  "_comment": "Startvoorstel segmenten (ter akkoord bij sales, zie het document 'Startvoorstel leadscan'). Laden met: python -m runner.seed_segments data/segments.json --apply. Weight__c in procenten; de som van de niet-verkennende segmenten is 100.",
+  "segments": [
+    {
+      "Name": "Nonprofit - CRM-vacatures",
+      "Target_Industry__c": "Nonprofit",
+      "Signal_Type__c": "Vacancy",
+      "Weight__c": 30,
+      "Exploration__c": false,
+      "Search_Strategy__c": "Zoek vacatures van de afgelopen 3 maanden bij goede doelen, fondsenwervers, ledenorganisaties, verenigingen en vakbonden in Nederland waarin CRM, Salesforce, donateursadministratie, ledenadministratie, relatiebeheer of CRM-functioneel beheer genoemd wordt. Bronnen: werkenbij-pagina's van de organisaties zelf, Goededoelenvacatures.nl, Nationale Vacaturebank en Indeed NL. Voorkeur voor organisaties met minimaal 10.000 donateurs of leden of minimaal 50 medewerkers.",
+      "Active__c": true
+    },
+    {
+      "Name": "Onderwijs - CRM-vacatures",
+      "Target_Industry__c": "Education",
+      "Signal_Type__c": "Vacancy",
+      "Weight__c": 20,
+      "Exploration__c": false,
+      "Search_Strategy__c": "Zoek vacatures van de afgelopen 3 maanden bij mbo-instellingen (ROC's, vakscholen), hogescholen en universiteiten in Nederland voor CRM-beheer, studentrelaties, werving en voorlichting, alumnirelaties, bedrijfsrelaties/contractonderwijs of klantcontact waarin een CRM-systeem genoemd wordt. Bronnen: werkenbij-pagina's van de instellingen en Academic Transfer.",
+      "Active__c": true
+    },
+    {
+      "Name": "Onderwijs - aanbestedingen",
+      "Target_Industry__c": "Education",
+      "Signal_Type__c": "Tender",
+      "Weight__c": 15,
+      "Exploration__c": false,
+      "Search_Strategy__c": "Zoek op TenderNed en in nieuws naar lopende of aangekondigde aanbestedingen, marktconsultaties en vooraankondigingen van onderwijsinstellingen (mbo, hbo, wo) voor CRM, relatiebeheer, studentvolgsystemen met CRM-functionaliteit of klantcontactsystemen. Alleen publicaties van de afgelopen 6 maanden met een sluitingsdatum in de toekomst of een recente gunning.",
+      "Active__c": true
+    },
+    {
+      "Name": "Manufacturing - sales- en servicevacatures",
+      "Target_Industry__c": "Manufacturing",
+      "Signal_Type__c": "Vacancy",
+      "Weight__c": 15,
+      "Exploration__c": false,
+      "Search_Strategy__c": "Zoek vacatures van de afgelopen 3 maanden bij Nederlandse productiebedrijven (50-5.000 medewerkers) met een eigen sales-, dealer- of servicenetwerk voor CRM-beheerder, sales operations, salessupport, field service of customer service waarin CRM of Salesforce genoemd wordt. Bronnen: werkenbij-pagina's van de bedrijven en vacaturesites.",
+      "Active__c": true
+    },
+    {
+      "Name": "Nonprofit - fusies en reorganisaties",
+      "Target_Industry__c": "Nonprofit",
+      "Signal_Type__c": "Merger",
+      "Weight__c": 10,
+      "Exploration__c": false,
+      "Search_Strategy__c": "Zoek nieuws van de afgelopen 6 maanden over fusies, overnames en samengaan van goede doelen, fondsenwervers, ledenorganisaties en vakbonden in Nederland, waardoor administraties en systemen moeten worden samengevoegd. Bronnen: nieuwsberichten, jaarverslagen, persberichten van de organisaties en vakmedia over de goededoelensector.",
+      "Active__c": true
+    },
+    {
+      "Name": "Lookalikes van klanten",
+      "Target_Industry__c": null,
+      "Signal_Type__c": "Lookalike",
+      "Weight__c": 10,
+      "Exploration__c": false,
+      "Search_Strategy__c": "Zoek organisaties die sterk lijken op de recent gewonnen klanten die de runner meegeeft: zelfde type organisatie, vergelijkbare omvang en regio. Het signaal is de gelijkenis zelf; noem in de samenvatting op welke klant de kandidaat lijkt en waarom. Geen klanten, dochters of zusterorganisaties van die klanten.",
+      "Active__c": true
+    },
+    {
+      "Name": "Energie - vacatures (verkennen)",
+      "Target_Industry__c": "Energy & Utilities",
+      "Signal_Type__c": "Vacancy",
+      "Weight__c": 0,
+      "Exploration__c": true,
+      "Search_Strategy__c": "Zoek vacatures van de afgelopen 3 maanden bij Nederlandse energieleveranciers, netbeheerders, warmtebedrijven en laadpaalbedrijven voor CRM-beheer, klantcontact of salesoperations waarin CRM of Salesforce genoemd wordt.",
+      "Active__c": true
+    },
+    {
+      "Name": "Woningcorporaties - aanbestedingen (verkennen)",
+      "Target_Industry__c": "Social Housing",
+      "Signal_Type__c": "Tender",
+      "Weight__c": 0,
+      "Exploration__c": true,
+      "Search_Strategy__c": "Zoek op TenderNed en in nieuws naar aanbestedingen, marktconsultaties en vooraankondigingen van woningcorporaties voor CRM, klantcontactsystemen of huurdersportalen van de afgelopen 6 maanden.",
+      "Active__c": true
+    },
+    {
+      "Name": "Financiele dienstverlening - vacatures (verkennen)",
+      "Target_Industry__c": "Financial Services",
+      "Signal_Type__c": "Vacancy",
+      "Weight__c": 0,
+      "Exploration__c": true,
+      "Search_Strategy__c": "Zoek vacatures van de afgelopen 3 maanden bij Nederlandse kredietverstrekkers, vermogensbeheerders, fondsen en financieringsplatforms voor CRM-beheer, relatiebeheer-ondersteuning of salesoperations waarin CRM of Salesforce genoemd wordt.",
+      "Active__c": true
+    }
+  ]
+}

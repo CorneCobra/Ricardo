@@ -189,11 +189,16 @@ class Pipeline:
         self.report.segment_budget = {s.name: budget[s.id] for s in segments}
         log.info("Zoekbudget per segment: %s", list(budget.values()))
         candidates: list[dict] = []
+        examples = None
+        if any(s.signal_type == "Lookalike" and budget[s.id] > 0 for s in segments):
+            examples = self.sf.recent_won_customers()
+            if not examples:
+                self._warn("Lookalike-segment zonder recent gewonnen klanten")
         for seg in segments:
             if budget[seg.id] <= 0:
                 continue
             try:
-                found, notes = discover.discover(self.claude, seg, budget[seg.id], deadline)
+                found, notes = discover.discover(self.claude, seg, budget[seg.id], deadline, examples)
             except DeadlineReached:
                 self._warn("Maximale looptijd bereikt tijdens ontdekken")
                 break

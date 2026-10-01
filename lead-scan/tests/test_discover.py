@@ -29,3 +29,18 @@ def test_segment_without_signal_type_accepts_all():
         "candidates": [cand("Een", "Vacancy"), cand("Twee", "Merger")]})])])
     found, _ = discover(client, seg(None), 5, None)
     assert len(found) == 2
+
+
+def test_lookalike_segment_gets_recent_customers_as_examples():
+    lookalike = Segment(id="S2", name="Lookalikes", target_industry=None, signal_type="Lookalike",
+                        search_strategy="lijkt op klanten", weight=10, exploration=False)
+    client = FakeClaude([response([tool_use("submit_candidates", {"candidates": []})])])
+    discover(client, lookalike, 5, None, [{"name": "Fictief Fonds", "industry": "Nonprofit"}])
+    prompt = client.calls[0]["messages"][0]["content"]
+    assert "Fictief Fonds" in prompt and "niet deze organisaties zelf" in prompt
+
+
+def test_examples_are_not_sent_to_other_segments():
+    client = FakeClaude([response([tool_use("submit_candidates", {"candidates": []})])])
+    discover(client, seg("Vacancy"), 5, None, [{"name": "Fictief Fonds"}])
+    assert "Fictief Fonds" not in client.calls[0]["messages"][0]["content"]

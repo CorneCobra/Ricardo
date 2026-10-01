@@ -94,6 +94,25 @@ class SalesforceClient:
         )
         return records[0]["Id"] if len(records) == 1 else None
 
+    def recent_won_customers(self, limit: int = 15) -> list[dict]:
+        """Klanten met een gewonnen opportunity in de laatste 12 maanden: voorbeelden voor lookalikes."""
+        records = self.query_all(
+            "SELECT AccountId, Account.Name, Account.Industry, Account.Website, CloseDate "
+            "FROM Opportunity WHERE IsWon = true AND CloseDate = LAST_N_MONTHS:12 AND AccountId != null "
+            "ORDER BY CloseDate DESC LIMIT 200"
+        )
+        seen, out = set(), []
+        for r in records:
+            acc = r.get("Account") or {}
+            if r["AccountId"] in seen or not acc.get("Name"):
+                continue
+            seen.add(r["AccountId"])
+            # Alleen velden waar de permission set leesrecht op geeft (geen adresvelden).
+            out.append({"name": acc["Name"], "industry": acc.get("Industry"), "website": acc.get("Website")})
+            if len(out) >= limit:
+                break
+        return out
+
     def get_run(self, run_key: str) -> dict | None:
         records = self.query_all(
             "SELECT Id, Status__c, Started__c, Finished__c, Leads_Created__c FROM Scan_Run__c "
@@ -164,3 +183,9 @@ class SalesforceClient:
 
     def update_segment(self, segment_id: str, fields: dict) -> None:
         self.sf.Scan_Segment__c.update(segment_id, fields)
+
+    def create_segment(self, fields: dict) -> str:
+        return self.sf.Scan_Segment__c.create(fields)["id"]
+
+    def all_segments(self) -> list[dict]:
+        return self.query_all("SELECT Id, Name FROM Scan_Segment__c")

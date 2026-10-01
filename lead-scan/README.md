@@ -84,6 +84,8 @@ Python-runner buiten Salesforce (GitHub Actions). Salesforce blijft de bron van 
 | `runner/slack.py` | Weekupdate (ingepland voor maandag 08:00), runrapport als bestand en directe foutmeldingen |
 | `runner/report.py` | Runrapport per run (Markdown + JSON): elke kandidaat met besluit per laag, onderzoek, claims en bronnen |
 | `runner/rollback.py` | Lead-Id's van één run (CSV) om terug te draaien |
+| `runner/preflight.py` | Controle van koppelingen en fase 1-metadata, schrijft niets |
+| `runner/seed_segments.py` + `data/segments.json` | Segmenten laden of bijwerken (startvoorstel: 9 segmenten) |
 | `runner/learning.py` | Segmentcijfers bijwerken; reflectie en gewichtsaanpassing volgen in fase 6 |
 | `runner/golden.py` + `tests/golden_set.json` | Gouden testset door de dubbelcheck (harde poort fase 3) |
 | `runner/icp.py` | ICP-tekst en -versie (**v1-concept, nog vast te stellen door sales**) |
@@ -151,7 +153,7 @@ python -m runner.main --dry-run --no-slack                                      
 
 ## GitHub Actions
 
-`.github/workflows/lead-scan.yml` draait zondag 22:07 (twee UTC-crons voor zomer- en wintertijd) en handmatig met de keuze `dry-run-dedup`, `dry-run`, `golden-set` of `run`. `.github/workflows/lead-scan-tests.yml` draait lint en tests bij elke wijziging in `lead-scan/`.
+`.github/workflows/lead-scan.yml` draait zondag 22:07 (twee UTC-crons voor zomer- en wintertijd) en handmatig met de keuze `preflight`, `dry-run-dedup`, `dry-run`, `golden-set` of `run`. `.github/workflows/lead-scan-tests.yml` draait lint en tests bij elke wijziging in `lead-scan/`.
 
 Inrichten (Settings → Environments → `lead-scan`):
 
@@ -168,6 +170,35 @@ Inrichten (Settings → Environments → `lead-scan`):
 
 Geplande workflows draaien alleen vanaf de standaardbranch.
 
+## Inrichting koppelingen (stap voor stap)
+
+Volgorde: fase 1 deployen → koppelingen inrichten → `preflight` → segmenten laden → gouden testset → proefrun dubbelcheck.
+
+1. **Certificaat voor de JWT-login** (lokaal, eenmalig):
+   ```bash
+   openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 730 -subj "/CN=cobra-leadscan"
+   ```
+   `server.key` is geheim en hoort alleen in het GitHub-secret `SF_PRIVATE_KEY`, nooit in de repository.
+2. **Connected App** (of External Client App) in de testomgeving:
+   - OAuth aan, callback `http://localhost:1717/OauthRedirect`;
+   - *Use digital signatures* met `server.crt`; JWT Bearer Flow toegestaan;
+   - scopes: *Manage user data via APIs (api)* en *Perform requests at any time (refresh_token, offline_access)*;
+   - *Permitted Users*: "Admin approved users are pre-authorized", en de permission set *Lead Scan Integration* (of het profiel van de integratiegebruiker) toevoegen.
+   - Consumer key → secret `SF_CONSUMER_KEY`; gebruikersnaam van de integratiegebruiker → secret `SF_USERNAME`.
+3. **Slack-app** (api.slack.com/apps → Create New App → From scratch):
+   - Bot Token Scopes: `chat:write` en `files:write`;
+   - installeren in de workspace, de bot uitnodigen in #claude-leads (`/invite @<app>`);
+   - Bot User OAuth Token (`xoxb-…`) → secret `SLACK_BOT_TOKEN`; kanaal-Id (kanaaldetails → Over) → variable `SLACK_CHANNEL`.
+4. **Anthropic API-key**: in de Console een aparte key voor de leadscan met een maandlimiet en budgetalert → secret `ANTHROPIC_API_KEY`.
+5. **GitHub**: environment `lead-scan` met de secrets en variables uit de tabel hierboven. Handmatige runs verschijnen pas als de workflow op de standaardbranch staat.
+6. **Controleren**: workflow-modus `preflight` (of lokaal `python -m runner.preflight`). Alles moet OK zijn; "LET OP" bij de duplicate rule betekent alleen dat de integratiegebruiker die niet mag lezen.
+7. **Segmenten laden** na akkoord van sales op het startvoorstel:
+   ```bash
+   python -m runner.seed_segments data/segments.json           # toont wat er gebeurt
+   python -m runner.seed_segments data/segments.json --apply   # maakt aan of werkt bij op naam
+   ```
+8. **Fase 3**: workflow-modus `golden-set`, daarna `dry-run-dedup`.
+
 ## Bewuste keuzes en aandachtspunten
 
 - **Model**: `claude-opus-5-5`, adaptive thinking, effort `high`, met server-side fallback (`fallbacks: "default"`) bij een weigering door de veiligheidsclassifiers. Web search/fetch: `web_search_20260209` / `web_fetch_20260209`. Wisselen alleen na een geslaagde gouden testset.
@@ -175,6 +206,7 @@ Geplande workflows draaien alleen vanaf de standaardbranch.
 - **E-maildomeinen**: de testomgeving maskeert e-mail met `.invalid`; dat wordt gestript. Eigen domeinen (`OWN_DOMAINS`) en domeinen die bij 5 of meer Account-bomen voorkomen zijn geen sleutel. E-maildomeinen zijn rommelig (een lead met het e-mailadres van een hogeschool, contactpersonen van een andere onderwijsinstelling bij een klant). Een match op alleen het e-maildomein telt daarom hard als het domein bij de naam van het record past (`domain_fits_name`); anders wordt het een twijfelgeval voor laag 3.
 - **"Laatste 12 maanden Unqualified"** gebruikt de statusgeschiedenis (LeadHistory). Dekt die de periode niet (in de testomgeving begint ze op 12-08-2026, dezelfde dag als een massa-update van 1.155 leads), dan geldt `LastModifiedDate` als strenge benadering. In productie opnieuw controleren.
 - **Permission set**: `Lead.Email` (lezen) toegevoegd, nodig voor de e-maildomeinmatching. Controleer bij de dry-run-deploy of de integratiegebruiker ook City/Country op Lead mag vullen.
+- **Lookalikes**: het segment met signaaltype Lookalike krijgt de klanten met een gewonnen opportunity in de laatste 12 maanden mee (naam, branche, website; maximaal 15). Dat zijn organisatiegegevens die naar de Claude API gaan, net als de records die laag 3 vergelijkt.
 - **Signaaltype**: staat niet op Lead. Geef elk segment één `Signal_Type__c`; de runner accepteert dan alleen kandidaten met dat signaal, zodat het leren per signaal via het segment loopt.
 - **Publieke repository**: code, workflow en logs zijn openbaar. Daarom geen klantnamen in tests of documentatie (alleen fictieve voorbeelden), geen details in de Actions-logs (`LEADSCAN_QUIET_LOGS=1`) en geen runrapport als artifact.
 - **Sub_Industry__c** is afhankelijk van Industry; de runner vult alleen bekende combinaties (`SUB_INDUSTRY_BY_INDUSTRY`). De koppeling van *Sociaal Ontwikkelbedrijf* nog controleren.
