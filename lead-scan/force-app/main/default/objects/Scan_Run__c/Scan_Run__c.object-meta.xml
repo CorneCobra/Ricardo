@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>One execution of the weekly lead scan, with its results, blocked candidates and errors.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableHistory>false</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>false</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Scan Run</label>
+    <nameField>
+        <displayFormat>RUN-{00000}</displayFormat>
+        <label>Scan Run Number</label>
+        <type>AutoNumber</type>
+    </nameField>
+    <pluralLabel>Scan Runs</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

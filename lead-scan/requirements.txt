@@ -1,0 +1,7 @@
+# Vastgepinde versies: wijzig alleen samen met een run op de gouden testset.
+anthropic==1.11.0
+simple-salesforce==1.12.10
+cryptography==49.0.0  # nodig voor de JWT-login van simple-salesforce
+slack_sdk==3.44.1
+requests==2.34.2
+jsonschema==4.26.0

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Run_Key__c</fullName>
+    <description>Unique key of the run (for example the scheduled week). Makes runs idempotent: a restart updates the same run.</description>
+    <label>Run Key</label>
+    <length>40</length>
+    <required>false</required>
+    <externalId>true</externalId>
+    <unique>true</unique>
+    <caseSensitive>false</caseSensitive>
+    <type>Text</type>
+</CustomField>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <deploymentStatus>Deployed</deploymentStatus>
+    <description>Search segment of the weekly lead scan: what to look for, how much search budget it gets and how well it converts.</description>
+    <enableActivities>false</enableActivities>
+    <enableBulkApi>true</enableBulkApi>
+    <enableHistory>true</enableHistory>
+    <enableReports>true</enableReports>
+    <enableSearch>true</enableSearch>
+    <enableSharing>true</enableSharing>
+    <enableStreamingApi>true</enableStreamingApi>
+    <label>Scan Segment</label>
+    <nameField>
+        <label>Scan Segment Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Scan Segments</pluralLabel>
+    <sharingModel>ReadWrite</sharingModel>
+</CustomObject>

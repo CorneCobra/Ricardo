@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Scan_Segment__c</fullName>
+    <description>Search segment that produced this lead. Used to measure conversion per segment.</description>
+    <label>Scan Segment</label>
+    <deleteConstraint>SetNull</deleteConstraint>
+    <referenceTo>Scan_Segment__c</referenceTo>
+    <relationshipLabel>Leads</relationshipLabel>
+    <relationshipName>Leads</relationshipName>
+    <required>false</required>
+    <type>Lookup</type>
+</CustomField>

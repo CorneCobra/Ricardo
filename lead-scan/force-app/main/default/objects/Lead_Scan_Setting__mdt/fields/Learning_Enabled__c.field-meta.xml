@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Learning_Enabled__c</fullName>
+    <description>When checked, segment weights and the ideal customer profile are adjusted automatically.</description>
+    <label>Learning Enabled</label>
+    <defaultValue>false</defaultValue>
+    <type>Checkbox</type>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>

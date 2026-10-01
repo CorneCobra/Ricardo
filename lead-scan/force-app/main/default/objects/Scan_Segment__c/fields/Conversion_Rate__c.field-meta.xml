@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Conversion_Rate__c</fullName>
+    <description>Share of leads from this segment that became an opportunity.</description>
+    <label>Conversion Rate</label>
+    <precision>5</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <type>Percent</type>
+</CustomField>

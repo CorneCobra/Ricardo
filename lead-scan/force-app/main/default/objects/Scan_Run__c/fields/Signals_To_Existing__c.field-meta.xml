@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Signals_To_Existing__c</fullName>
+    <description>Signals logged as a task on an existing lead or account instead of a new lead.</description>
+    <label>Signals To Existing Records</label>
+    <precision>6</precision>
+    <scale>0</scale>
+    <required>false</required>
+    <externalId>false</externalId>
+    <unique>false</unique>
+    <type>Number</type>
+</CustomField>

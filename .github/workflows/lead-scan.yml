@@ -1,0 +1,86 @@
+name: Leadscan (wekelijks)
+
+# Zondag 22:00 Europe/Amsterdam. GitHub-cron draait in UTC en kent geen zomertijd,
+# daarom twee tijden; de runner (--scheduled) draait alleen tussen 22:00 en 23:59
+# lokale tijd. De tweede start vindt de run voltooid en stopt meteen, of hervat
+# een mislukte run (idempotent via Run_Key__c).
+on:
+  schedule:
+    - cron: "7 20 * * 0"  # 22:07 zomertijd
+    - cron: "7 21 * * 0"  # 22:07 wintertijd
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Soort run"
+        type: choice
+        default: dry-run-dedup
+        options:
+          - dry-run-dedup  # fase 3: alleen ontdekken + dubbelcheck, niets schrijven
+          - dry-run        # volledige run, niets schrijven
+          - golden-set     # gouden testset door de dubbelcheck (harde poort)
+          - run            # echte run: schrijft leads, Tasks en Scan_Run__c
+      run_key:
+        description: "Afwijkende Run_Key__c (bijv. 2026-W41-test); leeg = huidige week"
+        required: false
+      force:
+        description: "Ook draaien als deze run al voltooid is"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lead-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    # Geplande runs pas na expliciete activatie (repo-variabele LEAD_SCAN_ENABLED=true).
+    if: github.event_name == 'workflow_dispatch' || vars.LEAD_SCAN_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300  # Max_Runtime_Minutes__c (240) + marge
+    environment: lead-scan
+    defaults:
+      run:
+        working-directory: lead-scan
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      SF_USERNAME: ${{ secrets.SF_USERNAME }}
+      SF_CONSUMER_KEY: ${{ secrets.SF_CONSUMER_KEY }}
+      SF_PRIVATE_KEY: ${{ secrets.SF_PRIVATE_KEY }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      SF_DOMAIN: ${{ vars.SF_DOMAIN || 'test' }}
+      SLACK_CHANNEL: ${{ vars.SLACK_CHANNEL || '#claude-leads' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: lead-scan/requirements.txt
+
+      - name: Installeren
+        run: pip install -r requirements.txt
+
+      - name: Geplande run
+        if: github.event_name == 'schedule'
+        run: python -m runner.main --scheduled
+
+      - name: Handmatige run
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          MODE: ${{ inputs.mode }}
+          RUN_KEY: ${{ inputs.run_key }}
+          FORCE: ${{ inputs.force }}
+        run: |
+          args=()
+          [ -n "$RUN_KEY" ] && args+=(--run-key "$RUN_KEY")
+          [ "$FORCE" = "true" ] && args+=(--force)
+          case "$MODE" in
+            dry-run-dedup) python -m runner.main --dry-run --dedup-only "${args[@]}" ;;
+            dry-run)       python -m runner.main --dry-run "${args[@]}" ;;
+            golden-set)    python -m runner.golden tests/golden_set.json --with-claude ;;
+            run)           python -m runner.main "${args[@]}" ;;
+          esac

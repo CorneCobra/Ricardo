@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Scan_Block_Convert_Placeholder_Name</fullName>
+    <active>true</active>
+    <description>Blocks converting a lead while its last name is still the placeholder value, so no placeholder contacts are created.</description>
+    <errorConditionFormula>AND(
+    IsConverted,
+    NOT(PRIORVALUE(IsConverted)),
+    LastName = &quot;Onbekend&quot;
+)</errorConditionFormula>
+    <errorDisplayField>LastName</errorDisplayField>
+    <errorMessage>Vul eerst een echte contactpersoon in. Een lead met achternaam &apos;Onbekend&apos; kan niet worden geconverteerd.</errorMessage>
+</ValidationRule>

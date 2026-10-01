@@ -1,0 +1,400 @@
+{
+  "description": "Gouden testset voor de dubbelcheck. Alleen record-Id's uit de testomgeving (Cobra TEST); namen, websites, KvK en e-maildomeinen haalt runner/golden.py live op. Aanvullen met nieuwe gevallen zodra de dubbelcheck iets mist (elke laag-4-blokkade is een kandidaat).",
+  "org": "testomgeving",
+  "cases": [
+    {
+      "id": "klant-a-website",
+      "record_id": "0011n000021quLNAAY",
+      "kind": "customer",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "klant, alleen websitedomein"
+    },
+    {
+      "id": "klant-a-naam",
+      "record_id": "0011n000021quLNAAY",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klant, alleen naam"
+    },
+    {
+      "id": "klant-b-website",
+      "record_id": "0010Y00001C9hbcQAB",
+      "kind": "customer",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "klant, alleen websitedomein"
+    },
+    {
+      "id": "klant-b-naam",
+      "record_id": "0010Y00001C9hbcQAB",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klant, alleen naam"
+    },
+    {
+      "id": "klant-c-website",
+      "record_id": "0019L000002k9yYQAQ",
+      "kind": "customer",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "klant, alleen websitedomein"
+    },
+    {
+      "id": "klant-c-naam",
+      "record_id": "0019L000002k9yYQAQ",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klant, alleen naam"
+    },
+    {
+      "id": "klant-d-website",
+      "record_id": "0010700000FMgggAAD",
+      "kind": "customer",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "klant, alleen websitedomein"
+    },
+    {
+      "id": "klant-d-naam",
+      "record_id": "0010700000FMgggAAD",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klant, alleen naam"
+    },
+    {
+      "id": "klant-e-website",
+      "record_id": "001W700000K1RFZIA3",
+      "kind": "customer",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "klant, alleen websitedomein"
+    },
+    {
+      "id": "klant-e-naam",
+      "record_id": "001W700000K1RFZIA3",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klant, alleen naam"
+    },
+    {
+      "id": "klant-f-website",
+      "record_id": "001W7000006CgzLIAS",
+      "kind": "customer",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "klant, alleen websitedomein"
+    },
+    {
+      "id": "klant-f-naam",
+      "record_id": "001W7000006CgzLIAS",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klant, alleen naam"
+    },
+    {
+      "id": "klant-d-afkorting",
+      "record_id": "0010700000FMgggAAD",
+      "kind": "customer",
+      "variant": "as_is",
+      "expected": "blocked",
+      "note": "klant met afkorting tussen haakjes in de naam"
+    },
+    {
+      "id": "klant-f-rechtsvorm",
+      "record_id": "001W7000006CgzLIAS",
+      "kind": "customer",
+      "variant": "legal_form",
+      "expected": "blocked",
+      "note": "klant met andere rechtsvorm"
+    },
+    {
+      "id": "klant-c-typo",
+      "record_id": "0019L000002k9yYQAQ",
+      "kind": "customer",
+      "variant": "typo",
+      "expected": "blocked",
+      "note": "naamgenoot: tikfout in klantnaam"
+    },
+    {
+      "id": "klant-b-typo",
+      "record_id": "0010Y00001C9hbcQAB",
+      "kind": "customer",
+      "variant": "typo",
+      "expected": "blocked",
+      "note": "naamgenoot: tikfout in klantnaam"
+    },
+    {
+      "id": "klant-g-email",
+      "record_id": "0011n00001owhC9AAI",
+      "kind": "customer",
+      "variant": "email_domain",
+      "expected": "blocked",
+      "note": "klant zonder website, e-maildomein contact"
+    },
+    {
+      "id": "klant-h-email",
+      "record_id": "0011n00001rlDMxAAM",
+      "kind": "customer",
+      "variant": "email_domain",
+      "expected": "blocked",
+      "note": "klant zonder website, e-maildomein contact"
+    },
+    {
+      "id": "klant-h-alias",
+      "record_id": "0011n00001rlDMxAAM",
+      "kind": "customer",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "klantnaam met '/' (twee namen)"
+    },
+    {
+      "id": "klant-i-kvk",
+      "record_id": "001W7000007nyS3IAI",
+      "kind": "customer",
+      "variant": "kvk_only",
+      "expected": "blocked",
+      "note": "klant, alleen KvK-nummer"
+    },
+    {
+      "id": "klant-j-kvk",
+      "record_id": "0019L000002NPgoQAG",
+      "kind": "customer",
+      "variant": "kvk_only",
+      "expected": "blocked",
+      "note": "klant, alleen KvK-nummer"
+    },
+    {
+      "id": "klant-k-kvk",
+      "record_id": "0011n000021qvohAAA",
+      "kind": "customer",
+      "variant": "kvk_only",
+      "expected": "blocked",
+      "note": "klant, alleen KvK-nummer"
+    },
+    {
+      "id": "klant-l-kvk",
+      "record_id": "0011n00002SIdK7AAL",
+      "kind": "customer",
+      "variant": "kvk_only",
+      "expected": "blocked",
+      "note": "klant, alleen KvK-nummer"
+    },
+    {
+      "id": "slapend-a-website",
+      "record_id": "0010Y00000OSSEVQA5",
+      "kind": "customer_sleeping",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "Customer - sleeping"
+    },
+    {
+      "id": "slapend-b-naam",
+      "record_id": "0010Y00000WZfP2QAL",
+      "kind": "customer_sleeping",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "Customer - sleeping"
+    },
+    {
+      "id": "dochter-a-naam",
+      "record_id": "0010700000GiEAMAA3",
+      "kind": "customer_hierarchy",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "dochter van klant, Type Other, geen website"
+    },
+    {
+      "id": "dochter-b-naam",
+      "record_id": "0011n00002bJcctAAC",
+      "kind": "customer_hierarchy",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "faculteit van klant (website op subpad)"
+    },
+    {
+      "id": "dochter-c-naam",
+      "record_id": "0011n000029QcrGAAS",
+      "kind": "customer_hierarchy",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "Prospect binnen de boom van een klant"
+    },
+    {
+      "id": "dochter-d-naam",
+      "record_id": "0019L000003885aQAA",
+      "kind": "customer_hierarchy",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "Prospect onder klant-moeder"
+    },
+    {
+      "id": "moeder-a-naam",
+      "record_id": "0011n00002Me0msAAB",
+      "kind": "customer_hierarchy",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "Prospect-moeder van een klant-dochter"
+    },
+    {
+      "id": "dochter-e-naam",
+      "record_id": "0011n00002PiwGUAAZ",
+      "kind": "customer_hierarchy",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "faculteit van klant zonder website"
+    },
+    {
+      "id": "dochter-d-website",
+      "record_id": "0019L000003885aQAA",
+      "kind": "customer_hierarchy",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "Prospect onder klant-moeder, website"
+    },
+    {
+      "id": "closedate-a",
+      "record_id": "0010700000BsK2JAAV",
+      "kind": "first_opportunity_closed",
+      "variant": "as_is",
+      "expected": "blocked",
+      "note": "Close_Date_first_Opportunity__c gevuld, Type No prospect"
+    },
+    {
+      "id": "concurrent-a",
+      "record_id": "00107000008fuW9AAI",
+      "kind": "competitor",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "Account Type Competitor"
+    },
+    {
+      "id": "concurrent-b",
+      "record_id": "00107000008fuWLAAY",
+      "kind": "competitor",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "Account Type Competitor"
+    },
+    {
+      "id": "unq-a",
+      "record_id": "00QW700000tkheOMAQ",
+      "kind": "lead_unqualified_excluded",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "Lead Unqualified: Competitor"
+    },
+    {
+      "id": "unq-b",
+      "record_id": "00QW7000011IZMTMA4",
+      "kind": "lead_unqualified_excluded",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "Lead Unqualified: Wrong industry"
+    },
+    {
+      "id": "prospect-a-website",
+      "record_id": "001bY00000tYJdFQAW",
+      "kind": "prospect",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "bestaande prospect"
+    },
+    {
+      "id": "prospect-b-website",
+      "record_id": "001bY00000t0OxAQAU",
+      "kind": "prospect",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "bestaande prospect"
+    },
+    {
+      "id": "prospect-c-website",
+      "record_id": "001W700000aPl8hIAC",
+      "kind": "prospect",
+      "variant": "website_only",
+      "expected": "blocked",
+      "note": "bestaande prospect"
+    },
+    {
+      "id": "prospect-a-naam",
+      "record_id": "001bY00000tYJdFQAW",
+      "kind": "prospect",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "bestaande prospect"
+    },
+    {
+      "id": "lead-a-email",
+      "record_id": "00QW7000011lRbbMAE",
+      "kind": "open_lead",
+      "variant": "email_domain",
+      "expected": "blocked",
+      "note": "open lead, e-maildomein"
+    },
+    {
+      "id": "lead-a-naam",
+      "record_id": "00QW7000011lRbbMAE",
+      "kind": "open_lead",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "open lead, naam"
+    },
+    {
+      "id": "lead-b-email",
+      "record_id": "00QW7000011lRbhMAE",
+      "kind": "open_lead",
+      "variant": "email_domain",
+      "expected": "blocked",
+      "note": "open lead, e-maildomein"
+    },
+    {
+      "id": "lead-b-naam",
+      "record_id": "00QW7000011lRbhMAE",
+      "kind": "open_lead",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "open lead, naam"
+    },
+    {
+      "id": "lead-c-email",
+      "record_id": "00QW7000011lRa6MAE",
+      "kind": "open_lead",
+      "variant": "email_domain",
+      "expected": "blocked",
+      "note": "open lead, e-maildomein"
+    },
+    {
+      "id": "lead-c-naam",
+      "record_id": "00QW7000011lRa6MAE",
+      "kind": "open_lead",
+      "variant": "name_only",
+      "expected": "blocked",
+      "note": "open lead, naam"
+    },
+    {
+      "id": "controle-1",
+      "kind": "control",
+      "variant": "as_is",
+      "company_name": "Kwartelkoning Logistiek Fictief",
+      "domain": "kwartelkoning-fictief-test.nl",
+      "expected": "pass",
+      "note": "fictieve organisatie: mag niet worden tegengehouden"
+    },
+    {
+      "id": "controle-2",
+      "kind": "control",
+      "variant": "as_is",
+      "company_name": "Stichting Zilverreiger Testfonds",
+      "domain": "zilverreiger-testfonds-fictief.nl",
+      "expected": "pass",
+      "note": "fictieve organisatie: mag niet worden tegengehouden"
+    }
+  ]
+}

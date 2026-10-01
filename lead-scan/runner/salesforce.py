@@ -1,0 +1,145 @@
+"""Alle Salesforce-communicatie van de runner. Claude komt hier nooit aan.
+
+- Inloggen met de JWT-flow (Connected App + integratiegebruiker).
+- Scan_Run__c upserten op Run_Key__c (idempotent).
+- Leads aanmaken via de Composite sObject Collections API, zónder
+  duplicate-rule-override: een blokkade door de duplicate rule is laag 4.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+
+from simple_salesforce import Salesforce
+
+from . import config
+
+log = logging.getLogger(__name__)
+
+SEGMENT_SOQL = (
+    "SELECT Id, Name, Target_Industry__c, Signal_Type__c, Search_Strategy__c, Weight__c, Exploration__c, "
+    "Leads_Created__c, Leads_Qualified__c, Leads_Unqualified__c, Opportunities_Created__c, Deals_Won__c "
+    "FROM Scan_Segment__c WHERE Active__c = true ORDER BY Name"
+)
+SETTINGS_SOQL = (
+    "SELECT Kill_Switch__c, Max_Leads_Per_Run__c, Minimum_Score__c, Max_Searches_Per_Candidate__c, "
+    "Max_Runtime_Minutes__c, Exploration_Share__c, Max_Weight_Change__c, Learning_Enabled__c "
+    "FROM Lead_Scan_Setting__mdt WHERE DeveloperName = 'Default'"
+)
+COLLECTION_SIZE = 200  # maximum van de sObject Collections API
+
+
+@dataclass
+class InsertResult:
+    index: int
+    id: str | None
+    duplicate: bool
+    errors: list[str]
+
+
+def _soql_quote(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("'", "\\'")
+
+
+class SalesforceClient:
+    def __init__(self, sf: Salesforce):
+        self.sf = sf
+
+    @classmethod
+    def login(cls, env: config.Env) -> "SalesforceClient":
+        sf = Salesforce(
+            username=env.sf_username,
+            consumer_key=env.sf_consumer_key,
+            privatekey=env.sf_private_key,
+            domain=env.sf_domain,
+        )
+        return cls(sf)
+
+    @property
+    def instance_url(self) -> str:
+        return f"https://{self.sf.sf_instance}"
+
+    # ---- lezen -------------------------------------------------------------
+
+    def query_all(self, soql: str) -> list[dict]:
+        return self.sf.query_all(soql)["records"]
+
+    def settings(self) -> config.Settings:
+        records = self.query_all(SETTINGS_SOQL)
+        if not records:
+            raise RuntimeError("Lead_Scan_Setting__mdt record 'Default' ontbreekt")
+        return config.Settings.from_record(records[0])
+
+    def active_segments(self) -> list[config.Segment]:
+        return [config.Segment.from_record(r) for r in self.query_all(SEGMENT_SOQL)]
+
+    def queue_id(self) -> str:
+        records = self.query_all(
+            f"SELECT Id FROM Group WHERE Type = 'Queue' AND DeveloperName = '{config.QUEUE_DEVELOPER_NAME}'"
+        )
+        if not records:
+            raise RuntimeError(f"Queue {config.QUEUE_DEVELOPER_NAME} bestaat niet")
+        return records[0]["Id"]
+
+    def partner_account_id(self, partner_name: str | None) -> str | None:
+        """Current_SF_Partner__c is een lookup: alleen vullen als de partner als Account bestaat."""
+        if not partner_name:
+            return None
+        records = self.query_all(
+            f"SELECT Id FROM Account WHERE Name = '{_soql_quote(partner_name)}' "
+            f"AND Type IN ('Partner', 'Competitor') LIMIT 2"
+        )
+        return records[0]["Id"] if len(records) == 1 else None
+
+    def get_run(self, run_key: str) -> dict | None:
+        records = self.query_all(
+            "SELECT Id, Status__c, Leads_Created__c FROM Scan_Run__c "
+            f"WHERE Run_Key__c = '{_soql_quote(run_key)}' LIMIT 1"
+        )
+        return records[0] if records else None
+
+    def leads_of_run(self, run_id: str) -> list[dict]:
+        return self.query_all(
+            f"SELECT Id, Company, Website FROM Lead WHERE Scan_Run__c = '{_soql_quote(run_id)}'"
+        )
+
+    # ---- schrijven ---------------------------------------------------------
+
+    def upsert_run(self, run_key: str, fields: dict) -> str:
+        """Upsert Scan_Run__c op Run_Key__c en geef het record-Id terug."""
+        self.sf.Scan_Run__c.upsert(f"Run_Key__c/{run_key}", fields)
+        run = self.get_run(run_key)
+        if not run:
+            raise RuntimeError(f"Scan_Run__c {run_key} niet gevonden na upsert")
+        return run["Id"]
+
+    def insert_leads(self, leads: list[dict]) -> list[InsertResult]:
+        """Composite insert, allOrNone=false. Geen DuplicateRuleHeader: de duplicate rule blokkeert."""
+        results: list[InsertResult] = []
+        for start in range(0, len(leads), COLLECTION_SIZE):
+            chunk = leads[start : start + COLLECTION_SIZE]
+            body = {
+                "allOrNone": False,
+                "records": [{"attributes": {"type": "Lead"}, **lead} for lead in chunk],
+            }
+            response = self.sf.restful("composite/sobjects", method="POST", json=body)
+            for offset, item in enumerate(response):
+                errors = item.get("errors") or []
+                codes = {e.get("statusCode") for e in errors}
+                results.append(
+                    InsertResult(
+                        index=start + offset,
+                        id=item.get("id") if item.get("success") else None,
+                        duplicate="DUPLICATES_DETECTED" in codes,
+                        errors=[f"{e.get('statusCode')}: {e.get('message')}" for e in errors],
+                    )
+                )
+        return results
+
+    def create_task(self, fields: dict) -> str:
+        result = self.sf.Task.create(fields)
+        return result["id"]
+
+    def update_segment(self, segment_id: str, fields: dict) -> None:
+        self.sf.Scan_Segment__c.update(segment_id, fields)

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Last_Evaluated__c</fullName>
+    <description>Moment the scan last recalculated the metrics and weight of this segment.</description>
+    <label>Last Evaluated</label>
+    <required>false</required>
+    <type>DateTime</type>
+</CustomField>

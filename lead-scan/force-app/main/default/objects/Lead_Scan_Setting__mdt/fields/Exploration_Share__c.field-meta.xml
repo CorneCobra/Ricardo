@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Exploration_Share__c</fullName>
+    <description>Share of the search budget reserved for exploring new or unproven segments.</description>
+    <label>Exploration Share</label>
+    <precision>5</precision>
+    <scale>2</scale>
+    <required>false</required>
+    <type>Percent</type>
+    <fieldManageability>SubscriberControlled</fieldManageability>
+</CustomField>
